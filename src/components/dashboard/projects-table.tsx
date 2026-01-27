@@ -1,41 +1,73 @@
-"use client"
-
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { projects, type Project } from "@/lib/data"
 
-const getTypeBadgeVariant = (type: Project["type"]) => {
+type ProjectType = "architecture" | "interior" | "engineering" | "mixed"
+type ProjectStatus = "planning" | "active" | "on_hold" | "completed" | "archived"
+
+interface ProjectMember {
+  id: string
+  name: string
+  avatar: string | null
+}
+
+interface Project {
+  id: string
+  name: string
+  type: ProjectType
+  status: ProjectStatus
+  progress: number
+  client: {
+    name: string
+  }
+  members: {
+    user: ProjectMember
+  }[]
+}
+
+interface ProjectsTableProps {
+  projects: Project[]
+}
+
+const getTypeBadgeVariant = (type: ProjectType) => {
   switch (type) {
-    case "Architecture":
+    case "architecture":
       return "type1"
-    case "Interior":
+    case "interior":
       return "type2"
-    case "Engineering":
+    case "engineering":
       return "type3"
     default:
       return "default"
   }
 }
 
-const getStatusColor = (status: Project["status"]) => {
+const formatType = (type: ProjectType) => {
+  return type.charAt(0).toUpperCase() + type.slice(1)
+}
+
+const getStatusColor = (status: ProjectStatus) => {
   switch (status) {
-    case "Active":
+    case "active":
       return "text-ocean-swell"
-    case "On Hold":
+    case "on_hold":
       return "text-sunlight"
-    case "Completed":
+    case "completed":
       return "text-green-400"
-    case "Planning":
+    case "planning":
       return "text-text-secondary"
     default:
       return "text-text-secondary"
   }
 }
 
-export function ProjectsTable() {
+const formatStatus = (status: ProjectStatus) => {
+  return status.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")
+}
+
+export function ProjectsTable({ projects }: ProjectsTableProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -70,7 +102,7 @@ export function ProjectsTable() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-color">
-              {projects.slice(0, 5).map((project) => (
+              {projects.map((project) => (
                 <tr key={project.id} className="group">
                   <td className="py-4">
                     <Link
@@ -79,16 +111,16 @@ export function ProjectsTable() {
                     >
                       {project.name}
                     </Link>
-                    <p className="text-sm text-text-secondary">{project.client}</p>
+                    <p className="text-sm text-text-secondary">{project.client.name}</p>
                   </td>
                   <td className="py-4">
                     <Badge variant={getTypeBadgeVariant(project.type)}>
-                      {project.type}
+                      {formatType(project.type)}
                     </Badge>
                   </td>
                   <td className="py-4">
                     <span className={getStatusColor(project.status)}>
-                      {project.status}
+                      {formatStatus(project.status)}
                     </span>
                   </td>
                   <td className="py-4">
@@ -101,17 +133,17 @@ export function ProjectsTable() {
                   </td>
                   <td className="py-4">
                     <div className="flex -space-x-2">
-                      {project.team.slice(0, 3).map((member) => (
-                        <Avatar key={member.id} className="h-8 w-8 border-2 border-bg-card">
+                      {project.members.slice(0, 3).map((member) => (
+                        <Avatar key={member.user.id} className="h-8 w-8 border-2 border-bg-card">
                           <AvatarFallback className="text-xs">
-                            {member.name.split(" ").map((n) => n[0]).join("")}
+                            {member.user.name.split(" ").map((n) => n[0]).join("")}
                           </AvatarFallback>
                         </Avatar>
                       ))}
-                      {project.team.length > 3 && (
+                      {project.members.length > 3 && (
                         <div className="h-8 w-8 rounded-full bg-bg-hover border-2 border-bg-card flex items-center justify-center">
                           <span className="text-xs text-text-secondary">
-                            +{project.team.length - 3}
+                            +{project.members.length - 3}
                           </span>
                         </div>
                       )}

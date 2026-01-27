@@ -1,0 +1,293 @@
+// Prisma schema for Flow SMS
+// Based on the database design from our planning session
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  admin
+  project_manager
+  team_lead
+  designer
+  engineer
+  viewer
+}
+
+enum ProjectType {
+  architecture
+  interior
+  engineering
+  mixed
+}
+
+enum ProjectStatus {
+  planning
+  active
+  on_hold
+  completed
+  archived
+}
+
+enum TaskStatus {
+  todo
+  in_progress
+  review
+  completed
+  blocked
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum MilestoneStatus {
+  pending
+  in_progress
+  completed
+  overdue
+}
+
+enum DocumentCategory {
+  drawing
+  specification
+  report
+  correspondence
+  contract
+  photo
+  other
+}
+
+// ============================================
+// CORE TABLES
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  role          UserRole  @default(viewer)
+  avatar        String?
+  phone         String?
+  department    String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  projectMembers    ProjectMember[]
+  tasksAssigned     Task[]           @relation("TaskAssignee")
+  tasksCreated      Task[]           @relation("TaskCreator")
+  comments          Comment[]
+  activities        Activity[]
+  documentsUploaded Document[]
+
+  @@map("users")
+}
+
+model Client {
+  id          String    @id @default(cuid())
+  name        String
+  email       String?
+  phone       String?
+  address     String?
+  contactName String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  projects Project[]
+
+  @@map("clients")
+}
+
+// ============================================
+// PROJECT TABLES
+// ============================================
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  type        ProjectType   @default(architecture)
+  status      ProjectStatus @default(planning)
+  clientId    String
+  location    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Decimal?      @db.Decimal(15, 2)
+  progress    Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  client     Client          @relation(fields: [clientId], references: [id])
+  members    ProjectMember[]
+  phases     Phase[]
+  milestones Milestone[]
+  tasks      Task[]
+  documents  Document[]
+  activities Activity[]
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String   @default("member") // Project-specific role
+  joinedAt  DateTime @default(now())
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model Phase {
+  id          String    @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  order       Int       @default(0)
+  startDate   DateTime?
+  endDate     DateTime?
+  progress    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@map("phases")
+}
+
+model Milestone {
+  id          String          @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  dueDate     DateTime
+  status      MilestoneStatus @default(pending)
+  completedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("milestones")
+}
+
+// ============================================
+// TASK TABLES
+// ============================================
+
+model Task {
+  id          String       @id @default(cuid())
+  projectId   String
+  phaseId     String?
+  parentId    String?      // For subtasks
+  title       String
+  description String?
+  status      TaskStatus   @default(todo)
+  priority    TaskPriority @default(medium)
+  assigneeId  String?
+  creatorId   String
+  dueDate     DateTime?
+  startDate   DateTime?
+  completedAt DateTime?
+  estimatedHours Decimal?  @db.Decimal(6, 2)
+  actualHours    Decimal?  @db.Decimal(6, 2)
+  order       Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  phase    Phase?    @relation(fields: [phaseId], references: [id])
+  parent   Task?     @relation("TaskSubtasks", fields: [parentId], references: [id])
+  subtasks Task[]    @relation("TaskSubtasks")
+  assignee User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creator  User      @relation("TaskCreator", fields: [creatorId], references: [id])
+  comments Comment[]
+
+  @@map("tasks")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
+
+// ============================================
+// DOCUMENT TABLES
+// ============================================
+
+model Document {
+  id          String           @id @default(cuid())
+  projectId   String
+  uploaderId  String
+  name        String
+  description String?
+  category    DocumentCategory @default(other)
+  fileUrl     String
+  fileSize    Int?
+  mimeType    String?
+  version     Int              @default(1)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relations
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploader User    @relation(fields: [uploaderId], references: [id])
+
+  @@map("documents")
+}
+
+// ============================================
+// ACTIVITY LOG
+// ============================================
+
+model Activity {
+  id        String   @id @default(cuid())
+  projectId String?
+  userId    String
+  action    String   // e.g., "created_task", "updated_milestone", "uploaded_document"
+  target    String   // What was affected
+  details   Json?    // Additional details
+  createdAt DateTime @default(now())
+
+  // Relations
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id])
+
+  @@map("activities")
+}
