@@ -3,14 +3,8 @@ import Foundation
 // MARK: - API Configuration
 
 struct APIConfig {
-    // Change this to your computer's local IP when testing on real device
-    // Use localhost for simulator
-    #if targetEnvironment(simulator)
-    static let baseURL = "http://localhost:3000/api"
-    #else
-    // Your Mac's local IP address for testing on real device
-    static let baseURL = "http://192.168.1.148:3000/api"
-    #endif
+    // Production URL - Vercel deployment
+    static let baseURL = "https://flow-sms-source-4x6gc78yd-swapnil9a-gmailcoms-projects.vercel.app/api"
 }
 
 // MARK: - API Errors

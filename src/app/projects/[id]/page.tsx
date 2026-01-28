@@ -79,7 +79,7 @@ export default function ProjectDetailPage() {
               <div>
                 <p className="text-sm text-text-secondary">Timeline</p>
                 <p className="text-sm font-medium text-text-primary">
-                  {new Date(project.startDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })} - {new Date(project.endDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                  {new Date(project.startDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })} - {new Date(project.targetDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                 </p>
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function ProjectDetailPage() {
                   with a focus on innovative solutions and sustainable practices.
                 </p>
                 <p className="text-text-secondary mt-4">
-                  The project timeline spans from {new Date(project.startDate).toLocaleDateString()} to {new Date(project.endDate).toLocaleDateString()},
+                  The project timeline spans from {new Date(project.startDate).toLocaleDateString()} to {new Date(project.targetDate).toLocaleDateString()},
                   with key milestones including schematic design, design development, and construction documentation phases.
                 </p>
               </CardContent>
