@@ -4,20 +4,20 @@ import { NextResponse } from "next/server"
 const AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN || ""
 const AIRTABLE_BASE_ID = "app97iqZiJbwTuYcG"
 
-// Category definitions with table names
+// Category definitions with table names (must match Airtable exactly)
 const CATEGORIES = [
-  { id: "01", name: "SURFACE", code: "SRF", icon: "square.3.layers.3d.top.filled" },
-  { id: "02", name: "LIGHTING", code: "LGT", icon: "lightbulb.fill" },
-  { id: "03", name: "ELECTRICAL FITTINGS", code: "EFI", icon: "powerplug.fill" },
-  { id: "04", name: "SANITARY FITTINGS", code: "SNF", icon: "drop.fill" },
-  { id: "05", name: "FURNITURE", code: "FUR", icon: "sofa.fill" },
-  { id: "06", name: "RUGS", code: "RUG", icon: "rectangle.pattern.checkered" },
-  { id: "07", name: "APPLIANCES", code: "APP", icon: "refrigerator.fill" },
-  { id: "08", name: "HARDWARE", code: "HRD", icon: "wrench.and.screwdriver.fill" },
-  { id: "09", name: "ACCESSORIES", code: "ACC", icon: "star.fill" },
-  { id: "10", name: "JOINERY", code: "JON", icon: "cabinet.fill" },
-  { id: "11", name: "ARTWORK", code: "ART", icon: "photo.artframe" },
-  { id: "12", name: "FABRIC", code: "FAB", icon: "rectangle.split.2x2.fill" },
+  { id: "01", name: "SURFACE", code: "SRF", tableName: "01 SURFACE (SRF)", icon: "square.3.layers.3d.top.filled" },
+  { id: "02", name: "LIGHTING", code: "LGT", tableName: "02 LIGHTING (LGT)", icon: "lightbulb.fill" },
+  { id: "03", name: "ELECTRICAL FITTINGS", code: "EFI", tableName: "03 ELECTRICAL FITTINGS (EFI)", icon: "powerplug.fill" },
+  { id: "04", name: "SANITARY FITTINGS", code: "SFI", tableName: "04 SANITARY FITTINGS (SFI)", icon: "drop.fill" },
+  { id: "05", name: "FURNITURE", code: "FUR", tableName: "05 FURNITURE (FUR)", icon: "sofa.fill" },
+  { id: "06", name: "RUGS", code: "RUG", tableName: "06 RUGS (RUG)", icon: "rectangle.pattern.checkered" },
+  { id: "07", name: "APPLIANCES", code: "APP", tableName: "07 APPLIANCES (APP)", icon: "refrigerator.fill" },
+  { id: "08", name: "HARDWARE", code: "HRD", tableName: "08 HARDWARE (HRD)", icon: "wrench.and.screwdriver.fill" },
+  { id: "09", name: "ACCESSORIES", code: "ACC", tableName: "09 ACCESSORIES (ACC)", icon: "star.fill" },
+  { id: "10", name: "JOINERY", code: "JON", tableName: "10 JOINERY (JON)", icon: "cabinet.fill" },
+  { id: "11", name: "ARTWORK", code: "ART", tableName: "11 ARTWORK (ART)", icon: "photo.artframe" },
+  { id: "12", name: "FABRIC", code: "FAB", tableName: "12 FABRIC (FAB)", icon: "rectangle.split.2x2.fill" },
 ]
 
 interface AirtableRecord {
@@ -173,8 +173,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Category not found" }, { status: 404 })
       }
 
-      const tableName = `${category.id} ${category.name}`
-      const records = await fetchAirtableTable(tableName)
+      const records = await fetchAirtableTable(category.tableName)
       const skus = parseRecordsToSKUs(records, category.id)
       const stats = calculateCategoryStats(skus, category)
 
@@ -192,13 +191,7 @@ export async function GET(request: Request) {
 
     for (const category of CATEGORIES) {
       try {
-        // Handle special case for ARTWORK which has two tables
-        let tableName = `${category.id} ${category.name}`
-        if (category.id === "11") {
-          tableName = "11 ARTWORK (ART)" // Primary artwork table
-        }
-
-        const records = await fetchAirtableTable(tableName)
+        const records = await fetchAirtableTable(category.tableName)
         const skus = parseRecordsToSKUs(records, category.id)
         const stats = calculateCategoryStats(skus, category)
 
