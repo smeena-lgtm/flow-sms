@@ -10,7 +10,14 @@ import { projects, type Project } from "@/lib/data"
 
 type ViewMode = "grid" | "table" | "kanban"
 
-const statusColumns = ["Planning", "Active", "On Hold", "Completed"] as const
+const statusColumns = ["lead", "feasibility", "active", "on-hold", "completed"] as const
+const statusLabels: Record<string, string> = {
+  "lead": "Lead",
+  "feasibility": "Feasibility",
+  "active": "Active",
+  "on-hold": "On Hold",
+  "completed": "Completed"
+}
 
 export default function ProjectsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
@@ -45,9 +52,9 @@ export default function ProjectsPage() {
         <Tabs value={filterType} onValueChange={setFilterType}>
           <TabsList>
             <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="Architecture">Architecture</TabsTrigger>
-            <TabsTrigger value="Interior">Interior</TabsTrigger>
-            <TabsTrigger value="Engineering">Engineering</TabsTrigger>
+            <TabsTrigger value="Type 1">Type 1</TabsTrigger>
+            <TabsTrigger value="Type 2">Type 2</TabsTrigger>
+            <TabsTrigger value="Type 3">Type 3</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -113,17 +120,17 @@ export default function ProjectsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <Badge variant={project.type === "Architecture" ? "type1" : project.type === "Interior" ? "type2" : "type3"}>
+                    <Badge variant={project.type === "Type 1" ? "type1" : project.type === "Type 2" ? "type2" : "type3"}>
                       {project.type}
                     </Badge>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`text-sm ${
-                      project.status === "Active" ? "text-ocean-swell" :
-                      project.status === "Completed" ? "text-green-400" :
-                      project.status === "On Hold" ? "text-sunlight" : "text-text-secondary"
+                      project.status === "active" ? "text-ocean-swell" :
+                      project.status === "completed" ? "text-green-400" :
+                      project.status === "on-hold" ? "text-sunlight" : "text-text-secondary"
                     }`}>
-                      {project.status}
+                      {statusLabels[project.status] || project.status}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -138,7 +145,7 @@ export default function ProjectsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-text-secondary">
-                    {new Date(project.endDate).toLocaleDateString()}
+                    {new Date(project.targetDate).toLocaleDateString()}
                   </td>
                 </tr>
               ))}
@@ -152,16 +159,16 @@ export default function ProjectsPage() {
           {statusColumns.map((status) => (
             <div key={status} className="bg-bg-dark rounded-lg p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium text-text-primary">{status}</h3>
-                <Badge variant="secondary">{projectsByStatus[status].length}</Badge>
+                <h3 className="font-medium text-text-primary">{statusLabels[status]}</h3>
+                <Badge variant="secondary">{projectsByStatus[status]?.length || 0}</Badge>
               </div>
               <div className="space-y-3">
-                {projectsByStatus[status].map((project) => (
+                {(projectsByStatus[status] || []).map((project) => (
                   <div
                     key={project.id}
                     className="bg-bg-card border border-border-color rounded-lg p-4 hover:border-ocean-swell/50 transition-colors cursor-pointer"
                   >
-                    <Badge variant={project.type === "Architecture" ? "type1" : project.type === "Interior" ? "type2" : "type3"} className="mb-2">
+                    <Badge variant={project.type === "Type 1" ? "type1" : project.type === "Type 2" ? "type2" : "type3"} className="mb-2">
                       {project.type}
                     </Badge>
                     <h4 className="font-medium text-text-primary text-sm">{project.name}</h4>
