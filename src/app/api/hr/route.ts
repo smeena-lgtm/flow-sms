@@ -81,8 +81,8 @@ function parseEmployees(rows: string[][]): Employee[] {
       name: row[1] || "",
       title: row[2] || "",
       status: row[3] || "",
-      reportsTo: row[4] || "",
-      office: row[5] || "",
+      office: row[4] || "",       // Column E: MIA, KSA, DXB
+      reportsTo: row[5] || "",    // Column F: Reports To
       remarks: row[6] || ""
     }))
 }
