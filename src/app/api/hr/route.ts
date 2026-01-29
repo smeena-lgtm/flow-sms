@@ -28,8 +28,18 @@ interface TBJCandidate {
   remarks: string
 }
 
+interface OfficeSummary {
+  office: string
+  totalEmployees: number
+  onBoard: number
+  toBeJoined: number
+}
+
 // Pipeline stages for TBJ
 const PIPELINE_STAGES = ["Lead", "Screening", "Interview", "Offer", "Onboarding"]
+
+// Known offices
+const OFFICES = ["MIA", "KSA", "DXB"]
 
 async function fetchSheetData(gid: string): Promise<string[][]> {
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`
@@ -74,9 +84,20 @@ async function fetchSheetData(gid: string): Promise<string[][]> {
 }
 
 function parseTeamData(rows: string[][]): TeamMember[] {
-  // Skip header row
+  // Skip header row and filter out summary/empty rows
   return rows.slice(1)
-    .filter(row => row[1]?.trim()) // Filter out empty rows
+    .filter(row => {
+      const name = row[1]?.trim() || ""
+      const srNo = row[0]?.trim() || ""
+      // Skip empty rows, summary rows, and header-like rows
+      if (!name) return false
+      // Skip if name contains keywords that indicate it's not a person
+      const skipKeywords = ["total", "employee", "on-board", "joined", "overall", "office", "sr.", "name", "title", "status"]
+      if (skipKeywords.some(kw => name.toLowerCase().includes(kw))) return false
+      // Must have a valid serial number (numeric)
+      if (!srNo || isNaN(parseInt(srNo))) return false
+      return true
+    })
     .map(row => ({
       srNo: row[0] || "",
       name: row[1] || "",
@@ -89,9 +110,19 @@ function parseTeamData(rows: string[][]): TeamMember[] {
 }
 
 function parseTBJData(rows: string[][]): TBJCandidate[] {
-  // Skip header row
+  // Skip header row and filter properly
   return rows.slice(1)
-    .filter(row => row[1]?.trim()) // Filter out empty rows
+    .filter(row => {
+      const name = row[1]?.trim() || ""
+      const srNo = row[0]?.trim() || ""
+      if (!name) return false
+      // Skip summary rows
+      const skipKeywords = ["total", "overall", "sr.", "name", "position", "stage"]
+      if (skipKeywords.some(kw => name.toLowerCase().includes(kw))) return false
+      // Must have a valid serial number
+      if (!srNo || isNaN(parseInt(srNo))) return false
+      return true
+    })
     .map(row => ({
       srNo: row[0] || "",
       name: row[1] || "",
@@ -104,6 +135,38 @@ function parseTBJData(rows: string[][]): TBJCandidate[] {
     }))
 }
 
+function calculateOfficeSummaries(team: TeamMember[], tbj: TBJCandidate[]): OfficeSummary[] {
+  const summaries: OfficeSummary[] = []
+
+  // Calculate per-office stats
+  OFFICES.forEach(office => {
+    const officeTeam = team.filter(m => m.office?.toUpperCase().includes(office))
+    const officeTBJ = tbj.filter(c => c.office?.toUpperCase().includes(office))
+    const onBoard = officeTeam.filter(m => m.status.toLowerCase() === "on-board").length
+
+    summaries.push({
+      office: `${office} OFFICE`,
+      totalEmployees: onBoard + officeTBJ.length,
+      onBoard: onBoard,
+      toBeJoined: officeTBJ.length
+    })
+  })
+
+  // Calculate overall totals
+  const totalOnBoard = team.filter(m => m.status.toLowerCase() === "on-board").length
+  const totalTBJ = tbj.length
+
+  // Add overall at the beginning
+  summaries.unshift({
+    office: "OVERALL",
+    totalEmployees: totalOnBoard + totalTBJ,
+    onBoard: totalOnBoard,
+    toBeJoined: totalTBJ
+  })
+
+  return summaries
+}
+
 export async function GET() {
   try {
     // Fetch both sheets in parallel
@@ -114,6 +177,9 @@ export async function GET() {
 
     const team = parseTeamData(teamRows)
     const tbj = parseTBJData(tbjRows)
+
+    // Calculate office summaries
+    const officeSummaries = calculateOfficeSummaries(team, tbj)
 
     // Calculate stats
     const stats = {
@@ -142,7 +208,8 @@ export async function GET() {
       tbj,
       pipeline,
       stats,
-      stages: PIPELINE_STAGES
+      stages: PIPELINE_STAGES,
+      officeSummaries
     })
   } catch (error) {
     console.error("HR API error:", error)

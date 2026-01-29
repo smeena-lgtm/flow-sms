@@ -29,6 +29,13 @@ interface TBJCandidate {
   remarks: string
 }
 
+interface OfficeSummary {
+  office: string
+  totalEmployees: number
+  onBoard: number
+  toBeJoined: number
+}
+
 interface HRData {
   team: TeamMember[]
   tbj: TBJCandidate[]
@@ -40,6 +47,7 @@ interface HRData {
     byStage: Record<string, number>
   }
   stages: string[]
+  officeSummaries: OfficeSummary[]
 }
 
 const stageColors: Record<string, string> = {
@@ -128,6 +136,66 @@ export default function HRReportsPage() {
         </Button>
       </div>
 
+      {/* Office Summary Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold text-text-primary flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-ocean-swell" />
+            Headcount Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-bg-dark border-b border-border-color">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-text-secondary">Office</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-text-secondary">Total Employees</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-text-secondary">Total On-Board</th>
+                  <th className="px-6 py-4 text-center text-sm font-medium text-text-secondary">To be Joined</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-color">
+                {data.officeSummaries?.map((summary, index) => (
+                  <tr
+                    key={summary.office}
+                    className={index === 0 ? "bg-ocean-swell/10 font-semibold" : "hover:bg-bg-hover"}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {index === 0 ? (
+                          <Users className="h-4 w-4 text-ocean-swell" />
+                        ) : (
+                          <MapPin className="h-4 w-4 text-text-secondary" />
+                        )}
+                        <span className={index === 0 ? "text-ocean-swell" : "text-text-primary"}>
+                          {summary.office}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`text-lg ${index === 0 ? "text-ocean-swell font-bold" : "text-text-primary"}`}>
+                        {summary.totalEmployees}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <Badge variant={index === 0 ? "type1" : "secondary"} className="min-w-[3rem]">
+                        {summary.onBoard}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <Badge variant={index === 0 ? "type2" : "secondary"} className="min-w-[3rem]">
+                        {summary.toBeJoined}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -137,7 +205,7 @@ export default function HRReportsPage() {
                 <Users className="h-6 w-6 text-ocean-swell" />
               </div>
               <div>
-                <p className="text-sm text-text-secondary">Total Team</p>
+                <p className="text-sm text-text-secondary">Total On-Board</p>
                 <p className="text-2xl font-bold text-text-primary">{data.stats.totalEmployees}</p>
               </div>
             </div>
