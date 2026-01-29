@@ -3,8 +3,8 @@ import { NextResponse } from "next/server"
 // Google Sheet ID for Project Statistics (separate sheet for data sanctity)
 const SHEET_ID = "1HORluZ8llo3uKTLfe884cI9C7jNe38ny_5OQd1yCeus"
 
-// GID for the Project Stats tab (first tab = 0)
-const PROJECT_STATS_GID = "0"
+// GID for the Project Stats tab
+const PROJECT_STATS_GID = "1893317411"
 
 /*
 GOOGLE SHEET STRUCTURE - Create a tab with these columns:
