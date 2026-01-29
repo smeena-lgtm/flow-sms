@@ -99,13 +99,20 @@ function parseRecordsToSKUs(records: AirtableRecord[], categoryId: string): SKUI
     const fields = record.fields
     return {
       id: record.id,
-      name: (fields["Name"] as string) || (fields["SKU Name"] as string) || "",
-      type: (fields["Type"] as string) || (fields["Category"] as string) || "",
-      material: (fields["Material"] as string) || (fields["Finish"] as string) || "",
-      status: (fields["Status"] as string) || "Active",
-      hasImage: !!(fields["Image"] || fields["Images"] || fields["Photo"]),
-      hasSpecSheet: !!(fields["Spec Sheet"] || fields["Specifications"] || fields["Data Sheet"]),
-      hasRevitFile: !!(fields["Revit"] || fields["Revit File"] || fields["BIM"]),
+      // Name: try multiple field variations
+      name: (fields["FAMILY"] as string) || (fields["Name"] as string) || (fields["SKU Name"] as string) || (fields["UE NAME"] as string) || "",
+      // Type: try FAMILY TYPE, CATEGORY, Type, Category
+      type: (fields["FAMILY TYPE"] as string) || (fields["CATEGORY"] as string) || (fields["Type"] as string) || (fields["Category"] as string) || "",
+      // Material: try MATERIAL, Material, Finish
+      material: (fields["MATERIAL"] as string) || (fields["Material"] as string) || (fields["Finish"] as string) || "",
+      // Status: default to Active if not specified
+      status: (fields["STATUS"] as string) || (fields["Status"] as string) || "Active",
+      // Image check
+      hasImage: !!(fields["IMAGE"] || fields["Image"] || fields["Images"] || fields["Photo"]),
+      // Spec sheet check
+      hasSpecSheet: !!(fields["SPEC SHEET"] || fields["Spec Sheet"] || fields["Specifications"] || fields["Data Sheet"]),
+      // Revit file check
+      hasRevitFile: !!(fields["REVIT"] || fields["Revit"] || fields["Revit File"] || fields["BIM"]),
       category: categoryId,
     }
   })
