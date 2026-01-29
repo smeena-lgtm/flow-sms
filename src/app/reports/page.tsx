@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Users, UserPlus, Building2, RefreshCw, MapPin, Briefcase, BarChart3, DollarSign, TrendingUp, Home, Car, Ruler, PieChart, Maximize2, ArrowUpDown, Building } from "lucide-react"
+import { Users, UserPlus, Building2, RefreshCw, MapPin, Briefcase, BarChart3, DollarSign, TrendingUp, Home, Car, Ruler, PieChart, Maximize2, ArrowUpDown, Building, Target, CheckCircle2, Circle, Clock, Sparkles } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -103,10 +103,183 @@ interface ProjectStatsData {
   lastUpdated: string
 }
 
+// Goals Types
+interface Initiative {
+  id: string
+  name: string
+  description: string
+  quarter: string
+  progress: number
+  status: "not_started" | "in_progress" | "completed"
+  category: string
+}
+
+interface ProjectMilestone {
+  quarter: string
+  milestone: string
+  status: "not_started" | "in_progress" | "completed"
+}
+
+interface ProjectRoadmap {
+  id: string
+  name: string
+  location: string
+  milestones: ProjectMilestone[]
+}
+
+// 2026 Goals Data - Common FLOW Initiatives
+const initiativesData: Initiative[] = [
+  {
+    id: "1",
+    name: "Cost Verticals & P&L Setup",
+    description: "Establish cost tracking verticals and profit/loss reporting structure",
+    quarter: "Q1",
+    progress: 0,
+    status: "not_started",
+    category: "Finance"
+  },
+  {
+    id: "2",
+    name: "Office Setup - Development & DEC Team",
+    description: "Set up dedicated office space for Development and DEC teams",
+    quarter: "Q1",
+    progress: 0,
+    status: "not_started",
+    category: "Operations"
+  },
+  {
+    id: "3",
+    name: "Design Guide - First Draft",
+    description: "Create comprehensive design guide with 15% completion target for Q1",
+    quarter: "Q1-Q3",
+    progress: 0,
+    status: "not_started",
+    category: "Design"
+  },
+  {
+    id: "4",
+    name: "Signage Guide",
+    description: "Develop standardized signage guidelines for all projects",
+    quarter: "Q1",
+    progress: 0,
+    status: "not_started",
+    category: "Design"
+  },
+  {
+    id: "5",
+    name: "Process Manual - First Draft",
+    description: "Document all operational processes and workflows",
+    quarter: "Q1",
+    progress: 0,
+    status: "not_started",
+    category: "Operations"
+  },
+  {
+    id: "6",
+    name: "Furniture Alternatives",
+    description: "Source alternative furniture options targeting 20% cost reduction",
+    quarter: "Q1",
+    progress: 0,
+    status: "not_started",
+    category: "Procurement"
+  },
+  {
+    id: "7",
+    name: "Amenities Standards & Calculator",
+    description: "Define amenities standards and create sizing calculator tool",
+    quarter: "Q1",
+    progress: 0,
+    status: "not_started",
+    category: "Standards"
+  }
+]
+
+// 2026 Goals Data - Project Roadmaps
+const projectRoadmapData: ProjectRoadmap[] = [
+  {
+    id: "olaya",
+    name: "Olaya",
+    location: "Riyadh",
+    milestones: [
+      { quarter: "Q1", milestone: "Delivery", status: "not_started" },
+      { quarter: "Q2", milestone: "-", status: "not_started" },
+      { quarter: "Q3", milestone: "-", status: "not_started" },
+      { quarter: "Q4", milestone: "-", status: "not_started" }
+    ]
+  },
+  {
+    id: "grand-view",
+    name: "Grand View",
+    location: "Riyadh",
+    milestones: [
+      { quarter: "Q1", milestone: "INT Package", status: "not_started" },
+      { quarter: "Q2", milestone: "-", status: "not_started" },
+      { quarter: "Q3", milestone: "-", status: "not_started" },
+      { quarter: "Q4", milestone: "-", status: "not_started" }
+    ]
+  },
+  {
+    id: "yusr",
+    name: "YUSR",
+    location: "Riyadh",
+    milestones: [
+      { quarter: "Q1", milestone: "Proposals", status: "not_started" },
+      { quarter: "Q2", milestone: "-", status: "not_started" },
+      { quarter: "Q3", milestone: "-", status: "not_started" },
+      { quarter: "Q4", milestone: "-", status: "not_started" }
+    ]
+  },
+  {
+    id: "brickell",
+    name: "Brickell",
+    location: "Miami",
+    milestones: [
+      { quarter: "Q1", milestone: "SAP Filing", status: "not_started" },
+      { quarter: "Q2", milestone: "SAP Approval", status: "not_started" },
+      { quarter: "Q3", milestone: "Business Plan", status: "not_started" },
+      { quarter: "Q4", milestone: "-", status: "not_started" }
+    ]
+  },
+  {
+    id: "el-portal",
+    name: "El Portal",
+    location: "Miami",
+    milestones: [
+      { quarter: "Q1", milestone: "Demo", status: "not_started" },
+      { quarter: "Q2", milestone: "CDD", status: "not_started" },
+      { quarter: "Q3", milestone: "Membership", status: "not_started" },
+      { quarter: "Q4", milestone: "MP Approval", status: "not_started" }
+    ]
+  },
+  {
+    id: "aventura",
+    name: "Aventura",
+    location: "Miami",
+    milestones: [
+      { quarter: "Q1", milestone: "Soft Launch", status: "not_started" },
+      { quarter: "Q2", milestone: "Parking", status: "not_started" },
+      { quarter: "Q3", milestone: "Hard Launch", status: "not_started" },
+      { quarter: "Q4", milestone: "Park Finish", status: "not_started" }
+    ]
+  },
+  {
+    id: "hollywood",
+    name: "Hollywood",
+    location: "Miami",
+    milestones: [
+      { quarter: "Q1", milestone: "Business Plan", status: "not_started" },
+      { quarter: "Q2", milestone: "-", status: "not_started" },
+      { quarter: "Q3", milestone: "-", status: "not_started" },
+      { quarter: "Q4", milestone: "-", status: "not_started" }
+    ]
+  }
+]
+
 // Report type tabs
 const reportTabs = [
   { id: "hr", name: "HR", icon: Users, description: "Human Resources" },
   { id: "projects", name: "Projects", icon: TrendingUp, description: "Project Statistics" },
+  { id: "goals", name: "Goals", icon: Target, description: "2026 Deliverables" },
   { id: "finance", name: "Finance", icon: DollarSign, description: "Financial Reports", comingSoon: true },
 ]
 
@@ -901,6 +1074,250 @@ export default function ReportsPage() {
               </div>
             </Card>
           )}
+        </div>
+      )}
+
+      {/* Goals 2026 Content */}
+      {activeReport === "goals" && (
+        <div className="space-y-8">
+          {/* Goals Header Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-ocean-swell/20 p-2.5">
+                    <Target className="h-5 w-5 text-ocean-swell" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-secondary">Total Initiatives</p>
+                    <p className="text-xl font-bold text-text-primary">{initiativesData.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-heart/20 p-2.5">
+                    <Building className="h-5 w-5 text-heart" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-secondary">Active Projects</p>
+                    <p className="text-xl font-bold text-text-primary">{projectRoadmapData.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-sunlight/20 p-2.5">
+                    <Clock className="h-5 w-5 text-sunlight" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-secondary">Q1 Milestones</p>
+                    <p className="text-xl font-bold text-text-primary">
+                      {projectRoadmapData.filter(p => p.milestones[0].milestone !== "-").length}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-green-500/20 p-2.5">
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-text-secondary">Completed</p>
+                    <p className="text-xl font-bold text-text-primary">
+                      {initiativesData.filter(i => i.status === "completed").length}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Common FLOW Initiatives Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-text-primary flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-ocean-swell" />
+                Common FLOW Initiatives
+              </CardTitle>
+              <p className="text-sm text-text-secondary">Key objectives and deliverables for 2026</p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {initiativesData.map((initiative) => (
+                  <div
+                    key={initiative.id}
+                    className="bg-bg-dark rounded-xl p-5 border border-border-color hover:border-ocean-swell/30 transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <Badge
+                        variant="secondary"
+                        className={`text-xs ${
+                          initiative.category === "Finance" ? "bg-green-500/20 text-green-400" :
+                          initiative.category === "Operations" ? "bg-ocean-swell/20 text-ocean-swell" :
+                          initiative.category === "Design" ? "bg-heart/20 text-heart" :
+                          initiative.category === "Procurement" ? "bg-sunlight/20 text-sunlight" :
+                          "bg-purple-500/20 text-purple-400"
+                        }`}
+                      >
+                        {initiative.category}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {initiative.quarter}
+                      </Badge>
+                    </div>
+                    <h4 className="font-semibold text-text-primary mb-2">{initiative.name}</h4>
+                    <p className="text-sm text-text-secondary mb-4">{initiative.description}</p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-text-secondary">Progress</span>
+                        <span className={`font-medium ${
+                          initiative.status === "completed" ? "text-green-500" :
+                          initiative.status === "in_progress" ? "text-ocean-swell" :
+                          "text-text-secondary"
+                        }`}>
+                          {initiative.progress}%
+                        </span>
+                      </div>
+                      <Progress value={initiative.progress} className="h-2" />
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      {initiative.status === "completed" ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : initiative.status === "in_progress" ? (
+                        <Clock className="h-4 w-4 text-ocean-swell" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-text-secondary" />
+                      )}
+                      <span className={`text-xs capitalize ${
+                        initiative.status === "completed" ? "text-green-500" :
+                        initiative.status === "in_progress" ? "text-ocean-swell" :
+                        "text-text-secondary"
+                      }`}>
+                        {initiative.status.replace("_", " ")}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Project Roadmap Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-text-primary flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-heart" />
+                Project Roadmap 2026
+              </CardTitle>
+              <p className="text-sm text-text-secondary">Quarterly milestones for active projects</p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-bg-dark border-b border-border-color">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-text-secondary">Project</th>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-text-secondary">Location</th>
+                      <th className="px-6 py-4 text-center text-sm font-medium text-text-secondary">
+                        <div className="flex flex-col items-center">
+                          <span>Q1</span>
+                          <span className="text-xs text-ocean-swell">Jan-Mar</span>
+                        </div>
+                      </th>
+                      <th className="px-6 py-4 text-center text-sm font-medium text-text-secondary">
+                        <div className="flex flex-col items-center">
+                          <span>Q2</span>
+                          <span className="text-xs text-heart">Apr-Jun</span>
+                        </div>
+                      </th>
+                      <th className="px-6 py-4 text-center text-sm font-medium text-text-secondary">
+                        <div className="flex flex-col items-center">
+                          <span>Q3</span>
+                          <span className="text-xs text-sunlight">Jul-Sep</span>
+                        </div>
+                      </th>
+                      <th className="px-6 py-4 text-center text-sm font-medium text-text-secondary">
+                        <div className="flex flex-col items-center">
+                          <span>Q4</span>
+                          <span className="text-xs text-green-500">Oct-Dec</span>
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-color">
+                    {projectRoadmapData.map((project) => (
+                      <tr key={project.id} className="hover:bg-bg-hover">
+                        <td className="px-6 py-4">
+                          <span className="font-semibold text-text-primary">{project.name}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-text-secondary" />
+                            <span className="text-text-secondary">{project.location}</span>
+                          </div>
+                        </td>
+                        {project.milestones.map((milestone, idx) => (
+                          <td key={idx} className="px-6 py-4 text-center">
+                            {milestone.milestone !== "-" ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <Badge
+                                  variant="secondary"
+                                  className={`text-xs whitespace-nowrap ${
+                                    milestone.status === "completed" ? "bg-green-500/20 text-green-400" :
+                                    milestone.status === "in_progress" ? "bg-ocean-swell/20 text-ocean-swell" :
+                                    idx === 0 ? "bg-ocean-swell/10 text-ocean-swell border border-ocean-swell/30" :
+                                    idx === 1 ? "bg-heart/10 text-heart border border-heart/30" :
+                                    idx === 2 ? "bg-sunlight/10 text-sunlight border border-sunlight/30" :
+                                    "bg-green-500/10 text-green-400 border border-green-500/30"
+                                  }`}
+                                >
+                                  {milestone.milestone}
+                                </Badge>
+                                {milestone.status === "completed" ? (
+                                  <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                ) : milestone.status === "in_progress" ? (
+                                  <Clock className="h-3 w-3 text-ocean-swell animate-pulse" />
+                                ) : null}
+                              </div>
+                            ) : (
+                              <span className="text-text-secondary/50">—</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Legend */}
+          <div className="flex flex-wrap items-center gap-6 text-sm text-text-secondary">
+            <div className="flex items-center gap-2">
+              <Circle className="h-4 w-4" />
+              <span>Not Started</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-ocean-swell" />
+              <span>In Progress</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <span>Completed</span>
+            </div>
+          </div>
         </div>
       )}
 
