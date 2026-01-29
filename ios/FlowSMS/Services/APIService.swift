@@ -4,7 +4,7 @@ import Foundation
 
 struct APIConfig {
     // Production URL - Vercel deployment
-    static let baseURL = "https://flow-sms-source-4x6gc78yd-swapnil9a-gmailcoms-projects.vercel.app/api"
+    static let baseURL = "https://flow-sms.vercel.app/api"
 }
 
 // MARK: - API Errors
