@@ -94,8 +94,8 @@ async function fetchAirtableTable(tableName: string): Promise<AirtableRecord[]> 
   return allRecords
 }
 
-function parseRecordsToSKUs(records: AirtableRecord[], categoryId: string): SKUItem[] {
-  return records.map((record) => {
+function parseRecordsToSKUs(records: AirtableRecord[], categoryId: string, activeOnly: boolean = true): SKUItem[] {
+  const allSKUs = records.map((record) => {
     const fields = record.fields
 
     // Name field varies by table type:
@@ -139,7 +139,7 @@ function parseRecordsToSKUs(records: AirtableRecord[], categoryId: string): SKUI
     if (!status && fields["APPROVED"] !== undefined) {
       status = fields["APPROVED"] ? "Active" : "Inactive"
     }
-    if (!status) status = "Active" // Default to active if not specified
+    if (!status) status = "Inactive" // Default to inactive if not specified
 
     return {
       id: record.id,
@@ -156,11 +156,18 @@ function parseRecordsToSKUs(records: AirtableRecord[], categoryId: string): SKUI
       category: categoryId,
     }
   })
+
+  // Filter to only ACTIVE status if requested
+  if (activeOnly) {
+    return allSKUs.filter((sku) => sku.status.toUpperCase() === "ACTIVE")
+  }
+  return allSKUs
 }
 
 function calculateCategoryStats(skus: SKUItem[], category: typeof CATEGORIES[0]): CategoryStats {
-  const active = skus.filter((s) => s.status.toLowerCase() === "active").length
-  const inactive = skus.length - active
+  // Since we filter to active only, all SKUs are active
+  const active = skus.length
+  const inactive = 0
 
   // Count types
   const types: Record<string, number> = {}
