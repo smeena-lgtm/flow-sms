@@ -26,10 +26,9 @@ const DropdownMenuTrigger = React.forwardRef<
 >(({ children, asChild, onClick, ...props }, ref) => {
   const context = React.useContext(DropdownMenuContext)
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     context?.onOpenChange(!context.open)
-    onClick?.(e)
   }
 
   if (asChild && React.isValidElement(children)) {
@@ -39,7 +38,14 @@ const DropdownMenuTrigger = React.forwardRef<
   }
 
   return (
-    <button ref={ref} onClick={handleClick} {...props}>
+    <button
+      ref={ref}
+      onClick={(e) => {
+        handleClick(e)
+        onClick?.(e)
+      }}
+      {...props}
+    >
       {children}
     </button>
   )
