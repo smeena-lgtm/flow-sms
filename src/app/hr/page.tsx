@@ -1,31 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Users, UserPlus, Building2, RefreshCw, MapPin, Briefcase, Calendar } from "lucide-react"
+import { Users, UserPlus, Building2, RefreshCw, MapPin, Briefcase } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-interface TeamMember {
+interface Employee {
   srNo: string
   name: string
   title: string
-  status: string
-  office: string
+  status: string  // "On-Board" or "TBJ"
+  office: string  // "MIA", "KSA", "DXB"
   reportsTo: string
-  remarks: string
-}
-
-interface TBJCandidate {
-  srNo: string
-  name: string
-  position: string
-  stage: string
-  office: string
-  expectedJoinDate: string
-  source: string
   remarks: string
 }
 
@@ -37,33 +26,15 @@ interface OfficeSummary {
 }
 
 interface HRData {
-  team: TeamMember[]
-  tbj: TBJCandidate[]
-  pipeline: { stage: string; candidates: TBJCandidate[] }[]
+  team: Employee[]
+  tbj: Employee[]
   stats: {
     totalEmployees: number
     totalTBJ: number
     byOffice: Record<string, number>
     byStage: Record<string, number>
   }
-  stages: string[]
   officeSummaries: OfficeSummary[]
-}
-
-const stageColors: Record<string, string> = {
-  "Lead": "bg-text-secondary",
-  "Screening": "bg-sunlight",
-  "Interview": "bg-ocean-swell",
-  "Offer": "bg-heart",
-  "Onboarding": "bg-green-500"
-}
-
-const stageBadgeColors: Record<string, string> = {
-  "Lead": "secondary",
-  "Screening": "type3",
-  "Interview": "type1",
-  "Offer": "type2",
-  "Onboarding": "default"
 }
 
 export default function HRReportsPage() {
@@ -92,6 +63,7 @@ export default function HRReportsPage() {
   }, [])
 
   const getInitials = (name: string) => {
+    if (!name || name === "TBD") return "?"
     return name
       .split(" ")
       .map(n => n[0])
@@ -219,7 +191,7 @@ export default function HRReportsPage() {
                 <UserPlus className="h-6 w-6 text-heart" />
               </div>
               <div>
-                <p className="text-sm text-text-secondary">TBJ Pipeline</p>
+                <p className="text-sm text-text-secondary">To Be Joined</p>
                 <p className="text-2xl font-bold text-text-primary">{data.stats.totalTBJ}</p>
               </div>
             </div>
@@ -247,8 +219,8 @@ export default function HRReportsPage() {
                 <Briefcase className="h-6 w-6 text-green-500" />
               </div>
               <div>
-                <p className="text-sm text-text-secondary">In Onboarding</p>
-                <p className="text-2xl font-bold text-text-primary">{data.stats.byStage["Onboarding"] || 0}</p>
+                <p className="text-sm text-text-secondary">Total Headcount</p>
+                <p className="text-2xl font-bold text-text-primary">{data.stats.totalEmployees + data.stats.totalTBJ}</p>
               </div>
             </div>
           </CardContent>
@@ -259,7 +231,7 @@ export default function HRReportsPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="team">Current Team ({data.stats.totalEmployees})</TabsTrigger>
-          <TabsTrigger value="tbj">TBJ Pipeline ({data.stats.totalTBJ})</TabsTrigger>
+          <TabsTrigger value="tbj">To Be Joined ({data.stats.totalTBJ})</TabsTrigger>
         </TabsList>
 
         {/* Team Tab */}
@@ -306,7 +278,7 @@ export default function HRReportsPage() {
                         </td>
                         <td className="px-6 py-4 text-text-secondary">{member.title}</td>
                         <td className="px-6 py-4">
-                          <Badge variant={member.status.toLowerCase() === "on-board" ? "type1" : "secondary"}>
+                          <Badge variant="type1">
                             {member.status}
                           </Badge>
                         </td>
@@ -322,73 +294,56 @@ export default function HRReportsPage() {
           </Card>
         </TabsContent>
 
-        {/* TBJ Pipeline Tab */}
+        {/* TBJ Tab */}
         <TabsContent value="tbj" className="mt-6">
-          {/* Pipeline Kanban View */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {data.pipeline.map(({ stage, candidates }) => (
-              <div key={stage} className="bg-bg-dark rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className={`h-2 w-2 rounded-full ${stageColors[stage]}`} />
-                    <h3 className="font-medium text-text-primary">{stage}</h3>
-                  </div>
-                  <Badge variant="secondary">{candidates.length}</Badge>
-                </div>
-
-                <div className="space-y-3">
-                  {candidates.length === 0 ? (
-                    <p className="text-sm text-text-secondary text-center py-4">No candidates</p>
-                  ) : (
-                    candidates.map((candidate, index) => (
-                      <Card key={index} className="hover:border-ocean-swell/50 transition-colors">
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-3">
-                            <Avatar className="h-8 w-8">
+          {/* TBJ Table */}
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-bg-dark border-b border-border-color">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-text-secondary">Sr. No.</th>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-text-secondary">Name</th>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-text-secondary">Position</th>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-text-secondary">Status</th>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-text-secondary">Office</th>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-text-secondary">Reports To</th>
+                      <th className="px-6 py-4 text-left text-sm font-medium text-text-secondary">Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-color">
+                    {data.tbj.map((person, index) => (
+                      <tr key={index} className="hover:bg-bg-hover">
+                        <td className="px-6 py-4 text-text-secondary">{person.srNo}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
                               <AvatarFallback className="text-xs bg-heart/20 text-heart">
-                                {getInitials(candidate.name)}
+                                {getInitials(person.name)}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-text-primary text-sm truncate">
-                                {candidate.name}
-                              </p>
-                              <p className="text-xs text-text-secondary truncate">
-                                {candidate.position}
-                              </p>
-                            </div>
+                            <span className="font-medium text-text-primary">
+                              {person.name === "TBD" ? "To Be Determined" : person.name}
+                            </span>
                           </div>
-
-                          {(candidate.office || candidate.expectedJoinDate) && (
-                            <div className="mt-3 space-y-1">
-                              {candidate.office && (
-                                <div className="flex items-center gap-1 text-xs text-text-secondary">
-                                  <MapPin className="h-3 w-3" />
-                                  {candidate.office}
-                                </div>
-                              )}
-                              {candidate.expectedJoinDate && (
-                                <div className="flex items-center gap-1 text-xs text-text-secondary">
-                                  <Calendar className="h-3 w-3" />
-                                  {candidate.expectedJoinDate}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {candidate.source && (
-                            <Badge variant="secondary" className="mt-2 text-xs">
-                              {candidate.source}
-                            </Badge>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
+                        </td>
+                        <td className="px-6 py-4 text-text-secondary">{person.title}</td>
+                        <td className="px-6 py-4">
+                          <Badge variant="type2">
+                            {person.status}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 text-text-secondary">{person.office}</td>
+                        <td className="px-6 py-4 text-text-secondary">{person.reportsTo}</td>
+                        <td className="px-6 py-4 text-text-secondary text-sm">{person.remarks}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

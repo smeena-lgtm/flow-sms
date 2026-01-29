@@ -3,28 +3,16 @@ import { NextResponse } from "next/server"
 // Google Sheet ID from the URL
 const SHEET_ID = "1_ju_qYu8Rbvykm4vn0z5Sw9BgQ9zIaHy8A4Xvg-wEI0"
 
-// Tab GIDs from Google Sheet URL
-const TEAM_GID = "0"
-const TBJ_GID = "252386052" // TBJ Pipeline tab
+// Tab GID - main LIST tab with all employees
+const LIST_GID = "0"
 
-interface TeamMember {
+interface Employee {
   srNo: string
   name: string
   title: string
-  status: string
-  office: string
+  status: string  // "On-Board" or "TBJ"
+  office: string  // "MIA", "KSA", "DXB"
   reportsTo: string
-  remarks: string
-}
-
-interface TBJCandidate {
-  srNo: string
-  name: string
-  position: string
-  stage: string
-  office: string
-  expectedJoinDate: string
-  source: string
   remarks: string
 }
 
@@ -34,9 +22,6 @@ interface OfficeSummary {
   onBoard: number
   toBeJoined: number
 }
-
-// Pipeline stages for TBJ
-const PIPELINE_STAGES = ["Lead", "Screening", "Interview", "Offer", "Onboarding"]
 
 // Known offices
 const OFFICES = ["MIA", "KSA", "DXB"]
@@ -83,20 +68,13 @@ async function fetchSheetData(gid: string): Promise<string[][]> {
   }
 }
 
-function parseTeamData(rows: string[][]): TeamMember[] {
-  // Skip header row and filter out summary/empty rows
+function parseEmployees(rows: string[][]): Employee[] {
+  // Skip header row, parse all rows with valid Sr. No.
   return rows.slice(1)
     .filter(row => {
-      const name = row[1]?.trim() || ""
       const srNo = row[0]?.trim() || ""
-      // Skip empty rows, summary rows, and header-like rows
-      if (!name) return false
-      // Skip if name contains keywords that indicate it's not a person
-      const skipKeywords = ["total", "employee", "on-board", "joined", "overall", "office", "sr.", "name", "title", "status"]
-      if (skipKeywords.some(kw => name.toLowerCase().includes(kw))) return false
       // Must have a valid serial number (numeric)
-      if (!srNo || isNaN(parseInt(srNo))) return false
-      return true
+      return srNo && !isNaN(parseInt(srNo))
     })
     .map(row => ({
       srNo: row[0] || "",
@@ -109,52 +87,26 @@ function parseTeamData(rows: string[][]): TeamMember[] {
     }))
 }
 
-function parseTBJData(rows: string[][]): TBJCandidate[] {
-  // Skip header row and filter properly
-  return rows.slice(1)
-    .filter(row => {
-      const name = row[1]?.trim() || ""
-      const srNo = row[0]?.trim() || ""
-      if (!name) return false
-      // Skip summary rows
-      const skipKeywords = ["total", "overall", "sr.", "name", "position", "stage"]
-      if (skipKeywords.some(kw => name.toLowerCase().includes(kw))) return false
-      // Must have a valid serial number
-      if (!srNo || isNaN(parseInt(srNo))) return false
-      return true
-    })
-    .map(row => ({
-      srNo: row[0] || "",
-      name: row[1] || "",
-      position: row[2] || "",
-      stage: row[3] || "Lead",
-      office: row[4] || "",
-      expectedJoinDate: row[5] || "",
-      source: row[6] || "",
-      remarks: row[7] || ""
-    }))
-}
-
-function calculateOfficeSummaries(team: TeamMember[], tbj: TBJCandidate[]): OfficeSummary[] {
+function calculateOfficeSummaries(employees: Employee[]): OfficeSummary[] {
   const summaries: OfficeSummary[] = []
 
   // Calculate per-office stats
   OFFICES.forEach(office => {
-    const officeTeam = team.filter(m => m.office?.toUpperCase().includes(office))
-    const officeTBJ = tbj.filter(c => c.office?.toUpperCase().includes(office))
-    const onBoard = officeTeam.filter(m => m.status.toLowerCase() === "on-board").length
+    const officeEmployees = employees.filter(e => e.office?.toUpperCase() === office)
+    const onBoard = officeEmployees.filter(e => e.status.toLowerCase() === "on-board").length
+    const tbj = officeEmployees.filter(e => e.status.toLowerCase() === "tbj").length
 
     summaries.push({
       office: `${office} OFFICE`,
-      totalEmployees: onBoard + officeTBJ.length,
+      totalEmployees: onBoard + tbj,
       onBoard: onBoard,
-      toBeJoined: officeTBJ.length
+      toBeJoined: tbj
     })
   })
 
   // Calculate overall totals
-  const totalOnBoard = team.filter(m => m.status.toLowerCase() === "on-board").length
-  const totalTBJ = tbj.length
+  const totalOnBoard = employees.filter(e => e.status.toLowerCase() === "on-board").length
+  const totalTBJ = employees.filter(e => e.status.toLowerCase() === "tbj").length
 
   // Add overall at the beginning
   summaries.unshift({
@@ -169,46 +121,34 @@ function calculateOfficeSummaries(team: TeamMember[], tbj: TBJCandidate[]): Offi
 
 export async function GET() {
   try {
-    // Fetch both sheets in parallel
-    const [teamRows, tbjRows] = await Promise.all([
-      fetchSheetData(TEAM_GID),
-      fetchSheetData(TBJ_GID)
-    ])
+    // Fetch the main LIST sheet
+    const rows = await fetchSheetData(LIST_GID)
+    const employees = parseEmployees(rows)
 
-    const team = parseTeamData(teamRows)
-    const tbj = parseTBJData(tbjRows)
+    // Separate into team (On-Board) and TBJ
+    const team = employees.filter(e => e.status.toLowerCase() === "on-board")
+    const tbj = employees.filter(e => e.status.toLowerCase() === "tbj")
 
     // Calculate office summaries
-    const officeSummaries = calculateOfficeSummaries(team, tbj)
+    const officeSummaries = calculateOfficeSummaries(employees)
 
     // Calculate stats
     const stats = {
-      totalEmployees: team.filter(m => m.status.toLowerCase() === "on-board").length,
+      totalEmployees: team.length,
       totalTBJ: tbj.length,
-      byOffice: team.reduce((acc, m) => {
-        if (m.office && m.status.toLowerCase() === "on-board") {
-          acc[m.office] = (acc[m.office] || 0) + 1
+      byOffice: team.reduce((acc, e) => {
+        if (e.office) {
+          acc[e.office] = (acc[e.office] || 0) + 1
         }
         return acc
       }, {} as Record<string, number>),
-      byStage: PIPELINE_STAGES.reduce((acc, stage) => {
-        acc[stage] = tbj.filter(c => c.stage.toLowerCase() === stage.toLowerCase()).length
-        return acc
-      }, {} as Record<string, number>)
+      byStage: {} as Record<string, number>
     }
-
-    // Group TBJ by stage for pipeline view
-    const pipeline = PIPELINE_STAGES.map(stage => ({
-      stage,
-      candidates: tbj.filter(c => c.stage.toLowerCase() === stage.toLowerCase())
-    }))
 
     return NextResponse.json({
       team,
       tbj,
-      pipeline,
       stats,
-      stages: PIPELINE_STAGES,
       officeSummaries
     })
   } catch (error) {
