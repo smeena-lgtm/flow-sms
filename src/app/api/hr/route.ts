@@ -3,8 +3,8 @@ import { NextResponse } from "next/server"
 // Google Sheet ID from the URL
 const SHEET_ID = "1_ju_qYu8Rbvykm4vn0z5Sw9BgQ9zIaHy8A4Xvg-wEI0"
 
-// Tab GID - second tab (Backup) with all employees
-const LIST_GID = "252386052"
+// Tab GID - Backup tab with all employees
+const LIST_GID = "612031636"
 
 interface Employee {
   srNo: string
