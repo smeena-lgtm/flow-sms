@@ -97,22 +97,62 @@ async function fetchAirtableTable(tableName: string): Promise<AirtableRecord[]> 
 function parseRecordsToSKUs(records: AirtableRecord[], categoryId: string): SKUItem[] {
   return records.map((record) => {
     const fields = record.fields
+
+    // Name field varies by table type:
+    // - Most tables: FAMILY
+    // - SURFACE: Name
+    // - FABRIC: FABRIC NAME
+    // - HARDWARE-type (04, 07, 08): TAG or LOCATION
+    // - ARTWORK IMG: SKU
+    const name = (fields["FAMILY"] as string) ||
+                 (fields["Name"] as string) ||
+                 (fields["FABRIC NAME"] as string) ||
+                 (fields["TAG"] as string) ||
+                 (fields["LOCATION"] as string) ||
+                 (fields["SKU"] as string) ||
+                 (fields["UE NAME"] as string) ||
+                 (fields["UE Name"] as string) ||
+                 (fields["GLOBAL SKU"] as string) ||
+                 ""
+
+    // Type field varies:
+    // - FAMILY TYPE, TYPE, CATEGORY, CATEGORY TYPE, ITEM TYPE
+    const type = (fields["FAMILY TYPE"] as string) ||
+                 (fields["TYPE"] as string) ||
+                 (fields["CATEGORY"] as string) ||
+                 (fields["CATEGORY TYPE"] as string) ||
+                 (fields["ITEM TYPE"] as string) ||
+                 ""
+
+    // Material field:
+    // - MATERIAL (most tables)
+    // - MATERIAL / FINISH (hardware-type tables)
+    const material = (fields["MATERIAL"] as string) ||
+                     (fields["MATERIAL / FINISH"] as string) ||
+                     ""
+
+    // Status field:
+    // - STATUS (most tables)
+    // - Status (some tables use lowercase)
+    // - APPROVED (hardware-type tables - boolean)
+    let status = (fields["STATUS"] as string) || (fields["Status"] as string) || ""
+    if (!status && fields["APPROVED"] !== undefined) {
+      status = fields["APPROVED"] ? "Active" : "Inactive"
+    }
+    if (!status) status = "Active" // Default to active if not specified
+
     return {
       id: record.id,
-      // Name: try multiple field variations
-      name: (fields["FAMILY"] as string) || (fields["Name"] as string) || (fields["SKU Name"] as string) || (fields["UE NAME"] as string) || "",
-      // Type: try FAMILY TYPE, CATEGORY, Type, Category
-      type: (fields["FAMILY TYPE"] as string) || (fields["CATEGORY"] as string) || (fields["Type"] as string) || (fields["Category"] as string) || "",
-      // Material: try MATERIAL, Material, Finish
-      material: (fields["MATERIAL"] as string) || (fields["Material"] as string) || (fields["Finish"] as string) || "",
-      // Status: default to Active if not specified
-      status: (fields["STATUS"] as string) || (fields["Status"] as string) || "Active",
-      // Image check
-      hasImage: !!(fields["IMAGE"] || fields["Image"] || fields["Images"] || fields["Photo"]),
-      // Spec sheet check
-      hasSpecSheet: !!(fields["SPEC SHEET"] || fields["Spec Sheet"] || fields["Specifications"] || fields["Data Sheet"]),
-      // Revit file check
-      hasRevitFile: !!(fields["REVIT"] || fields["Revit"] || fields["Revit File"] || fields["BIM"]),
+      name,
+      type,
+      material,
+      status,
+      // Image: IMAGE field
+      hasImage: !!(fields["IMAGE"] || fields["Image"]),
+      // Spec/Shop links: SHOP or PRODUCT LINK
+      hasSpecSheet: !!(fields["SHOP"] || fields["PRODUCT LINK"]),
+      // Revit/3D files: REVIT or FBX
+      hasRevitFile: !!(fields["REVIT"] || fields["FBX"]),
       category: categoryId,
     }
   })
