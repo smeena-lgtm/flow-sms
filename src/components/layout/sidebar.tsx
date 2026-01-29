@@ -12,14 +12,14 @@ import {
   Settings,
   Menu,
   X,
-  ClipboardList,
+  BarChart3,
 } from "lucide-react"
 import { useState } from "react"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Projects", href: "/projects", icon: FolderKanban },
-  { name: "HR Reports", href: "/hr", icon: ClipboardList },
+  { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Team", href: "/team", icon: Users },
   { name: "Calendar", href: "/calendar", icon: Calendar },
   { name: "Documents", href: "/documents", icon: FileText },
