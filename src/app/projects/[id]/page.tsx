@@ -13,11 +13,11 @@ import { projects } from "@/lib/data"
 
 const getTypeBadgeVariant = (type: string) => {
   switch (type) {
-    case "Architecture":
+    case "Type 1":
       return "type1"
-    case "Interior":
+    case "Type 2":
       return "type2"
-    case "Engineering":
+    case "Type 3":
       return "type3"
     default:
       return "default"

@@ -12,11 +12,11 @@ interface ProjectCardProps {
 
 const getTypeBadgeVariant = (type: Project["type"]) => {
   switch (type) {
-    case "Architecture":
+    case "Type 1":
       return "type1"
-    case "Interior":
+    case "Type 2":
       return "type2"
-    case "Engineering":
+    case "Type 3":
       return "type3"
     default:
       return "default"
@@ -25,17 +25,26 @@ const getTypeBadgeVariant = (type: Project["type"]) => {
 
 const getStatusColor = (status: Project["status"]) => {
   switch (status) {
-    case "Active":
+    case "active":
       return "bg-ocean-swell"
-    case "On Hold":
+    case "on-hold":
       return "bg-sunlight"
-    case "Completed":
+    case "completed":
       return "bg-green-500"
-    case "Planning":
+    case "lead":
+    case "feasibility":
       return "bg-text-secondary"
     default:
       return "bg-text-secondary"
   }
+}
+
+const statusLabels: Record<string, string> = {
+  "lead": "Lead",
+  "feasibility": "Feasibility",
+  "active": "Active",
+  "on-hold": "On Hold",
+  "completed": "Completed"
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
@@ -52,8 +61,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
           <div className="flex items-start justify-between mb-4 pr-6">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1.5">
-                <span className={`h-2 w-2 rounded-full ${getStatusColor(project.status)} ${project.status === "Active" ? "animate-pulse" : ""}`} />
-                <span className="text-xs text-text-secondary font-medium">{project.status}</span>
+                <span className={`h-2 w-2 rounded-full ${getStatusColor(project.status)} ${project.status === "active" ? "animate-pulse" : ""}`} />
+                <span className="text-xs text-text-secondary font-medium">{statusLabels[project.status] || project.status}</span>
               </div>
               <h3 className="font-semibold text-text-primary group-hover:text-ocean-swell transition-colors duration-200 truncate">
                 {project.name}
@@ -92,7 +101,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
             <div className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" />
               <span>
-                {new Date(project.endDate).toLocaleDateString("en-US", {
+                {new Date(project.targetDate).toLocaleDateString("en-US", {
                   month: "short",
                   year: "numeric",
                 })}
