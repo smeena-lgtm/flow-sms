@@ -1,194 +1,367 @@
 "use client"
 
-import { useState } from "react"
-import { LayoutGrid, List, Kanban, Plus, Search, Filter } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { ProjectCard } from "@/components/projects/project-card"
-import { projects, type Project } from "@/lib/data"
+import { useState, useEffect } from "react"
+import {
+  FolderPlus,
+  ArrowRightLeft,
+  CheckCircle2,
+  Building2,
+  MapPin,
+} from "lucide-react"
 
-type ViewMode = "grid" | "table" | "kanban"
-
-const statusColumns = ["lead", "feasibility", "active", "on-hold", "completed"] as const
-const statusLabels: Record<string, string> = {
-  "lead": "Lead",
-  "feasibility": "Feasibility",
-  "active": "Active",
-  "on-hold": "On Hold",
-  "completed": "Completed"
+interface PXTProject {
+  srNo: string
+  plotName: string
+  projectName: string
+  plotArea: string
+  location: string
+  status: "PIT" | "POT" | "PHT"
+  unitMix: {
+    studio: number
+    oneBR: number
+    twoBR: number
+    threeBR: number
+    fourBR: number
+    liner: number
+    total: number
+  }
+  gfa: {
+    residential: number
+    commercial: number
+    total: number
+  }
+  sellableArea: {
+    residential: number
+    commercial: number
+    total: number
+  }
 }
 
+interface PXTData {
+  projects: PXTProject[]
+  grouped: {
+    pit: PXTProject[]
+    pot: PXTProject[]
+    pht: PXTProject[]
+  }
+  stats: {
+    total: number
+    pit: number
+    pot: number
+    pht: number
+    byLocation: {
+      miami: number
+      riyadh: number
+    }
+    totalUnits: number
+    totalGFA: number
+  }
+  lastUpdated: string
+}
+
+const tabs = [
+  { id: "all", label: "All Projects", icon: Building2 },
+  { id: "pit", label: "PIT - Initiation", icon: FolderPlus },
+  { id: "pot", label: "POT - Onboard", icon: CheckCircle2 },
+  { id: "pht", label: "PHT - Handover", icon: ArrowRightLeft },
+]
+
 export default function ProjectsPage() {
-  const [viewMode, setViewMode] = useState<ViewMode>("grid")
-  const [filterType, setFilterType] = useState<string>("all")
+  const [activeTab, setActiveTab] = useState("all")
+  const [data, setData] = useState<PXTData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const filteredProjects = filterType === "all"
-    ? projects
-    : projects.filter((p) => p.type === filterType)
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true)
+        const res = await fetch("/api/pxt")
+        if (!res.ok) throw new Error("Failed to fetch")
+        const json = await res.json()
+        setData(json)
+      } catch (err) {
+        setError("Failed to load project data")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
-  const projectsByStatus = statusColumns.reduce((acc, status) => {
-    acc[status] = filteredProjects.filter((p) => p.status === status)
-    return acc
-  }, {} as Record<string, Project[]>)
+  const getFilteredProjects = () => {
+    if (!data) return []
+    switch (activeTab) {
+      case "pit":
+        return data.grouped.pit
+      case "pot":
+        return data.grouped.pot
+      case "pht":
+        return data.grouped.pht
+      default:
+        return data.projects
+    }
+  }
+
+  const projects = getFilteredProjects()
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-semibold text-text-primary">Projects</h2>
-          <p className="text-text-secondary">Manage and track all your projects</p>
-        </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Project
-        </Button>
-      </div>
-
-      {/* Filters and View Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Type Filter */}
-        <Tabs value={filterType} onValueChange={setFilterType}>
-          <TabsList>
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="Type 1">Type 1</TabsTrigger>
-            <TabsTrigger value="Type 2">Type 2</TabsTrigger>
-            <TabsTrigger value="Type 3">Type 3</TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center rounded-lg bg-bg-dark p-1">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === "grid" ? "bg-bg-card text-text-primary" : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("table")}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === "table" ? "bg-bg-card text-text-primary" : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              <List className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("kanban")}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === "kanban" ? "bg-bg-card text-text-primary" : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              <Kanban className="h-4 w-4" />
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold text-text-primary">Projects</h1>
+          <p className="text-sm text-text-muted mt-1">
+            Track projects through Initiation → Onboard → Handover
+          </p>
         </div>
       </div>
 
-      {/* Content */}
-      {viewMode === "grid" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
+      {/* Stats Overview */}
+      {data && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          <StatCard
+            label="Total"
+            value={data.stats.total}
+            color="bg-accent-blue"
+          />
+          <StatCard
+            label="PIT"
+            value={data.stats.pit}
+            color="bg-accent-yellow"
+          />
+          <StatCard
+            label="POT"
+            value={data.stats.pot}
+            color="bg-accent-green"
+          />
+          <StatCard
+            label="PHT"
+            value={data.stats.pht}
+            color="bg-accent-purple"
+          />
+          <StatCard
+            label="Miami"
+            value={data.stats.byLocation.miami}
+            color="bg-accent-cyan"
+          />
+          <StatCard
+            label="Riyadh"
+            value={data.stats.byLocation.riyadh}
+            color="bg-accent-pink"
+          />
+          <StatCard
+            label="Total Units"
+            value={data.stats.totalUnits.toLocaleString()}
+            color="bg-accent-blue"
+          />
         </div>
       )}
 
-      {viewMode === "table" && (
-        <div className="bg-bg-card border border-border-color rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-bg-dark">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">Project</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">Type</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">Progress</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-text-secondary">End Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-color">
-              {filteredProjects.map((project) => (
-                <tr key={project.id} className="hover:bg-bg-hover">
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-text-primary">{project.name}</p>
-                      <p className="text-sm text-text-secondary">{project.client}</p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge variant={project.type === "Type 1" ? "type1" : project.type === "Type 2" ? "type2" : "type3"}>
-                      {project.type}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`text-sm ${
-                      project.status === "active" ? "text-ocean-swell" :
-                      project.status === "completed" ? "text-green-400" :
-                      project.status === "on-hold" ? "text-sunlight" : "text-text-secondary"
-                    }`}>
-                      {statusLabels[project.status] || project.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 h-2 bg-bg-hover rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-ocean-swell"
-                          style={{ width: `${project.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-sm text-text-secondary">{project.progress}%</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-text-secondary">
-                    {new Date(project.targetDate).toLocaleDateString()}
-                  </td>
+      {/* Tab Navigation */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
+              activeTab === tab.id
+                ? "bg-accent-blue text-white"
+                : "bg-bg-card text-text-secondary hover:bg-bg-card-hover"
+            }`}
+          >
+            <tab.icon className="h-4 w-4" />
+            {tab.label}
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs ${
+                activeTab === tab.id ? "bg-white/20" : "bg-bg-hover"
+              }`}
+            >
+              {tab.id === "all"
+                ? data?.stats.total || 0
+                : tab.id === "pit"
+                ? data?.stats.pit || 0
+                : tab.id === "pot"
+                ? data?.stats.pot || 0
+                : data?.stats.pht || 0}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-blue"></div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && (
+        <div className="text-center py-20 text-accent-red">{error}</div>
+      )}
+
+      {/* Projects Table */}
+      {!loading && !error && (
+        <div className="rounded-2xl bg-bg-card border border-border-color overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-bg-surface">
+                  <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-4 py-3">
+                    Project
+                  </th>
+                  <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-4 py-3">
+                    Location
+                  </th>
+                  <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-4 py-3">
+                    Status
+                  </th>
+                  <th className="text-right text-xs font-medium text-text-muted uppercase tracking-wider px-4 py-3">
+                    Total Units
+                  </th>
+                  <th className="text-right text-xs font-medium text-text-muted uppercase tracking-wider px-4 py-3">
+                    GFA
+                  </th>
+                  <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-4 py-3">
+                    Unit Mix
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border-color">
+                {projects.map((project, index) => (
+                  <tr
+                    key={project.srNo || index}
+                    className="hover:bg-bg-card-hover transition-colors"
+                  >
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center text-white font-semibold ${
+                            project.location === "MIA"
+                              ? "bg-gradient-to-br from-accent-cyan to-accent-blue"
+                              : "bg-gradient-to-br from-accent-yellow to-accent-red"
+                          }`}
+                        >
+                          {project.projectName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-medium text-text-primary">
+                            {project.projectName}
+                          </p>
+                          {project.plotName && (
+                            <p className="text-xs text-text-muted">
+                              {project.plotName}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-text-muted" />
+                        <span className="text-sm text-text-secondary">
+                          {project.location === "MIA" ? "Miami" : "Riyadh"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          project.status === "PIT"
+                            ? "bg-accent-yellow/15 text-accent-yellow"
+                            : project.status === "POT"
+                            ? "bg-accent-green/15 text-accent-green"
+                            : "bg-accent-purple/15 text-accent-purple"
+                        }`}
+                      >
+                        {project.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <span className="text-sm font-semibold text-text-primary">
+                        {project.unitMix.total.toLocaleString()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <span className="text-sm text-text-secondary">
+                        {project.gfa.total > 0
+                          ? project.gfa.total.toLocaleString()
+                          : "-"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      {project.unitMix.total > 0 ? (
+                        <div className="flex gap-1 flex-wrap">
+                          {project.unitMix.studio > 0 && (
+                            <UnitBadge label="ST" value={project.unitMix.studio} />
+                          )}
+                          {project.unitMix.oneBR > 0 && (
+                            <UnitBadge label="1BR" value={project.unitMix.oneBR} />
+                          )}
+                          {project.unitMix.twoBR > 0 && (
+                            <UnitBadge label="2BR" value={project.unitMix.twoBR} />
+                          )}
+                          {project.unitMix.threeBR > 0 && (
+                            <UnitBadge label="3BR" value={project.unitMix.threeBR} />
+                          )}
+                          {project.unitMix.fourBR > 0 && (
+                            <UnitBadge label="4BR" value={project.unitMix.fourBR} />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-text-muted">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {projects.length === 0 && (
+            <div className="text-center py-12 text-text-muted">
+              No projects found
+            </div>
+          )}
         </div>
       )}
 
-      {viewMode === "kanban" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {statusColumns.map((status) => (
-            <div key={status} className="bg-bg-dark rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium text-text-primary">{statusLabels[status]}</h3>
-                <Badge variant="secondary">{projectsByStatus[status]?.length || 0}</Badge>
-              </div>
-              <div className="space-y-3">
-                {(projectsByStatus[status] || []).map((project) => (
-                  <div
-                    key={project.id}
-                    className="bg-bg-card border border-border-color rounded-lg p-4 hover:border-ocean-swell/50 transition-colors cursor-pointer"
-                  >
-                    <Badge variant={project.type === "Type 1" ? "type1" : project.type === "Type 2" ? "type2" : "type3"} className="mb-2">
-                      {project.type}
-                    </Badge>
-                    <h4 className="font-medium text-text-primary text-sm">{project.name}</h4>
-                    <p className="text-xs text-text-secondary mt-1">{project.client}</p>
-                    <div className="flex items-center gap-2 mt-3">
-                      <div className="flex-1 h-1.5 bg-bg-hover rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-ocean-swell"
-                          style={{ width: `${project.progress}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-text-secondary">{project.progress}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Last Updated */}
+      {data && (
+        <p className="text-xs text-text-muted text-right">
+          Last updated: {new Date(data.lastUpdated).toLocaleString()}
+        </p>
       )}
     </div>
+  )
+}
+
+function StatCard({
+  label,
+  value,
+  color,
+}: {
+  label: string
+  value: number | string
+  color: string
+}) {
+  return (
+    <div className="rounded-xl bg-bg-card border border-border-color p-4">
+      <p className="text-xs text-text-muted mb-1">{label}</p>
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${color}`} />
+        <span className="text-xl font-bold text-text-primary">{value}</span>
+      </div>
+    </div>
+  )
+}
+
+function UnitBadge({ label, value }: { label: string; value: number }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-bg-surface text-xs">
+      <span className="text-text-muted">{label}</span>
+      <span className="font-medium text-text-primary">{value}</span>
+    </span>
   )
 }

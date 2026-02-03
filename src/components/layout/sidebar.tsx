@@ -11,14 +11,10 @@ import {
   Settings,
   Menu,
   X,
-  BarChart3,
   ListTodo,
   DollarSign,
   ChevronDown,
   ChevronRight,
-  Gauge,
-  ClipboardList,
-  Truck,
   LogOut,
   HelpCircle,
 } from "lucide-react"
@@ -34,20 +30,10 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: "Analytics", href: "/", icon: LayoutDashboard },
   { name: "Projects", href: "/projects", icon: FolderKanban },
-  { name: "HR", href: "/reports?tab=team", icon: Users },
+  { name: "HR", href: "/hr", icon: Users },
   { name: "Finance", href: "/finance", icon: DollarSign },
   { name: "Tasks", href: "/tasks", icon: ListTodo },
-  {
-    name: "Trackers (PXT)",
-    href: "/trackers",
-    icon: Gauge,
-    children: [
-      { name: "PIT - Initiation", href: "/trackers/initiation" },
-      { name: "POT - Onboard", href: "/trackers/onboard" },
-      { name: "PHT - Handover", href: "/trackers/handover" },
-    ],
-  },
-  { name: "Documents", href: "/reports?tab=standards", icon: FileText },
+  { name: "Documents", href: "/documents", icon: FileText },
 ]
 
 const bottomNavigation = [
@@ -57,7 +43,7 @@ const bottomNavigation = [
 export function Sidebar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [expandedItems, setExpandedItems] = useState<string[]>(["Trackers (PXT)"])
+  const [expandedItems, setExpandedItems] = useState<string[]>([])
 
   const toggleExpanded = (name: string) => {
     setExpandedItems((prev) =>
