@@ -76,8 +76,6 @@ function parseNumber(value: string): number {
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
-    const statusFilter = searchParams.get("status")?.toUpperCase() // PIT, POT, PHT
-    const locationFilter = searchParams.get("location")?.toUpperCase() // MIA, RYD
 
     const response = await fetch(SHEET_URL, {
       next: { revalidate: 30 }, // Cache for 30 seconds
@@ -90,36 +88,50 @@ export async function GET(request: Request) {
     const csv = await response.text()
     const rows = parseCSV(csv)
 
+    // Debug mode - return raw column structure
+    if (searchParams.get("debug") === "true") {
+      const headerRow = rows[0] || []
+      const firstDataRow = rows[1] || []
+      return NextResponse.json({
+        headers: headerRow.map((h, i) => `[${i}] ${h}`),
+        firstRow: firstDataRow.map((v, i) => `[${i}] ${v}`),
+        totalRows: rows.length - 1,
+      })
+    }
+
+    // Filter params
+    const statusFilter = searchParams.get("status")?.toUpperCase() // PIT, POT, PHT
+    const locationFilter = searchParams.get("location")?.toUpperCase() // MIA, RYD
+
     // Skip header row
     const dataRows = rows.slice(1).filter((row) => row[0] && row[2]) // Must have Sr. No. and Project Name
 
-    // Debug: Log the first row to see column structure
-    // Column order from Google Sheet: Sr.No | PlotName | ProjectName | PlotArea | Status | Location | # | ST | 1BR | 2BR | 3BR | 4BR | LINER | Total | GFA_RESI | GFA_COMM | GFA_TOTAL | SA_RESI | SA_COMM | SA_TOTAL
+    // Column mapping based on actual Google Sheet structure
     const projects: PXTProject[] = dataRows.map((row) => ({
       srNo: row[0] || "",
       plotName: row[1] || "",
       projectName: row[2] || "",
       plotArea: row[3] || "",
-      status: (row[4] || "PIT") as "PIT" | "POT" | "PHT",  // Column E: Status (PIT, POT, PHT)
       location: row[5] || "",  // Column F: Location (MIA or RYD)
+      status: (row[6] || "PIT") as "PIT" | "POT" | "PHT",  // Column G: Status (PIT, POT, PHT)
       unitMix: {
-        studio: parseNumber(row[7] || "0"),   // Column H (ST) - skip column G (#)
-        oneBR: parseNumber(row[8] || "0"),    // Column I (1 BR)
-        twoBR: parseNumber(row[9] || "0"),    // Column J (2 BR)
-        threeBR: parseNumber(row[10] || "0"), // Column K (3 BR)
-        fourBR: parseNumber(row[11] || "0"),  // Column L (4 BR)
-        liner: parseNumber(row[12] || "0"),   // Column M (LINER)
-        total: parseNumber(row[13] || "0"),   // Column N (Total Unit mix)
+        studio: parseNumber(row[8] || "0"),   // Column I (ST)
+        oneBR: parseNumber(row[9] || "0"),    // Column J (1 BR)
+        twoBR: parseNumber(row[10] || "0"),   // Column K (2 BR)
+        threeBR: parseNumber(row[11] || "0"), // Column L (3 BR)
+        fourBR: parseNumber(row[12] || "0"),  // Column M (4 BR)
+        liner: parseNumber(row[13] || "0"),   // Column N (LINER)
+        total: parseNumber(row[14] || "0"),   // Column O (Total Unit mix)
       },
       gfa: {
-        residential: parseNumber(row[14] || "0"),  // Column O (GFA RESI)
-        commercial: parseNumber(row[15] || "0"),   // Column P (GFA COMM)
-        total: parseNumber(row[16] || "0"),        // Column Q (GFA TOTAL)
+        residential: parseNumber(row[15] || "0"),  // Column P (GFA RESI)
+        commercial: parseNumber(row[16] || "0"),   // Column Q (GFA COMM)
+        total: parseNumber(row[17] || "0"),        // Column R (GFA TOTAL)
       },
       sellableArea: {
-        residential: parseNumber(row[17] || "0"),  // Column R (SA RESI)
-        commercial: parseNumber(row[18] || "0"),   // Column S (SA COMM)
-        total: parseNumber(row[19] || "0"),        // Column T (SA TOTAL)
+        residential: parseNumber(row[18] || "0"),  // Column S (SA RESI)
+        commercial: parseNumber(row[19] || "0"),   // Column T (SA COMM)
+        total: parseNumber(row[20] || "0"),        // Column U (SA TOTAL)
       },
     }))
 
