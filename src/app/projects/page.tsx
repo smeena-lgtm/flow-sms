@@ -1,13 +1,25 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import {
   FolderPlus,
   ArrowRightLeft,
   CheckCircle2,
   Building2,
   MapPin,
+  Map,
+  ChevronRight,
 } from "lucide-react"
+
+// Dynamically import map to avoid SSR issues
+const ProjectMap = dynamic(() => import("@/components/maps/ProjectMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[250px] rounded-xl bg-bg-surface animate-pulse" />
+  ),
+})
 
 interface PXTProject {
   srNo: string
@@ -67,6 +79,7 @@ const tabs = [
 ]
 
 export default function ProjectsPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("all")
   const [data, setData] = useState<PXTData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -104,6 +117,10 @@ export default function ProjectsPage() {
   }
 
   const projects = getFilteredProjects()
+
+  const handleProjectClick = (srNo: string) => {
+    router.push(`/projects/${encodeURIComponent(srNo)}`)
+  }
 
   return (
     <div className="space-y-6">
@@ -155,6 +172,39 @@ export default function ProjectsPage() {
             value={data.stats.totalUnits.toLocaleString()}
             color="bg-accent-blue"
           />
+        </div>
+      )}
+
+      {/* Map Section */}
+      {data && data.projects.length > 0 && (
+        <div className="rounded-2xl bg-bg-card border border-border-color p-4">
+          <h2 className="text-sm font-medium text-text-muted mb-3 flex items-center gap-2">
+            <Map className="h-4 w-4" />
+            Project Locations
+            <span className="ml-auto text-xs">
+              {data.stats.byLocation.miami} Miami • {data.stats.byLocation.riyadh} Riyadh
+            </span>
+          </h2>
+          <ProjectMap
+            projects={projects}
+            showAllMarkers={true}
+            height="250px"
+          />
+          {/* Legend */}
+          <div className="flex items-center justify-center gap-6 mt-3 text-xs text-text-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-accent-yellow" />
+              PIT
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-accent-green" />
+              POT
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-accent-purple" />
+              PHT
+            </span>
+          </div>
         </div>
       )}
 
@@ -226,13 +276,15 @@ export default function ProjectsPage() {
                   <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-4 py-3">
                     Unit Mix
                   </th>
+                  <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-color">
                 {projects.map((project, index) => (
                   <tr
                     key={project.srNo || index}
-                    className="hover:bg-bg-card-hover transition-colors"
+                    onClick={() => handleProjectClick(project.srNo)}
+                    className="hover:bg-bg-card-hover transition-colors cursor-pointer group"
                   >
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
@@ -246,7 +298,7 @@ export default function ProjectsPage() {
                           {project.projectName.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-text-primary">
+                          <p className="font-medium text-text-primary group-hover:text-ocean-swell transition-colors">
                             {project.projectName}
                           </p>
                           {project.plotName && (
@@ -312,6 +364,9 @@ export default function ProjectsPage() {
                       ) : (
                         <span className="text-xs text-text-muted">-</span>
                       )}
+                    </td>
+                    <td className="px-4 py-4">
+                      <ChevronRight className="h-5 w-5 text-text-muted group-hover:text-ocean-swell transition-colors" />
                     </td>
                   </tr>
                 ))}
