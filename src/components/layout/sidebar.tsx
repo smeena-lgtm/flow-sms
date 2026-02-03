@@ -38,13 +38,13 @@ const navigation: NavItem[] = [
   { name: "Finance", href: "/finance", icon: DollarSign },
   { name: "Tasks", href: "/tasks", icon: ListTodo },
   {
-    name: "Trackers",
+    name: "Trackers (PXT)",
     href: "/trackers",
     icon: Gauge,
     children: [
-      { name: "HR Tracker", href: "/trackers/hr" },
-      { name: "Finance Tracker", href: "/trackers/finance" },
-      { name: "Procurement", href: "/trackers/procurement" },
+      { name: "PIT - Initiation", href: "/trackers/initiation" },
+      { name: "POT - Onboard", href: "/trackers/onboard" },
+      { name: "PHT - Handover", href: "/trackers/handover" },
     ],
   },
   { name: "Documents", href: "/reports?tab=standards", icon: FileText },
@@ -57,7 +57,7 @@ const bottomNavigation = [
 export function Sidebar() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [expandedItems, setExpandedItems] = useState<string[]>(["Trackers"])
+  const [expandedItems, setExpandedItems] = useState<string[]>(["Trackers (PXT)"])
 
   const toggleExpanded = (name: string) => {
     setExpandedItems((prev) =>
