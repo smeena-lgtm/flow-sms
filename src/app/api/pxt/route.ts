@@ -93,31 +93,33 @@ export async function GET(request: Request) {
     // Skip header row
     const dataRows = rows.slice(1).filter((row) => row[0] && row[2]) // Must have Sr. No. and Project Name
 
+    // Debug: Log the first row to see column structure
+    // Column order from Google Sheet: Sr.No | PlotName | ProjectName | PlotArea | Status | Location | # | ST | 1BR | 2BR | 3BR | 4BR | LINER | Total | GFA_RESI | GFA_COMM | GFA_TOTAL | SA_RESI | SA_COMM | SA_TOTAL
     const projects: PXTProject[] = dataRows.map((row) => ({
       srNo: row[0] || "",
       plotName: row[1] || "",
       projectName: row[2] || "",
       plotArea: row[3] || "",
-      location: row[4] || "",
-      status: (row[5] || "PIT") as "PIT" | "POT" | "PHT",
+      status: (row[4] || "PIT") as "PIT" | "POT" | "PHT",  // Column E: Status (PIT, POT, PHT)
+      location: row[5] || "",  // Column F: Location (MIA or RYD)
       unitMix: {
-        studio: parseNumber(row[6] || "0"),
-        oneBR: parseNumber(row[7] || "0"),
-        twoBR: parseNumber(row[8] || "0"),
-        threeBR: parseNumber(row[9] || "0"),
-        fourBR: parseNumber(row[10] || "0"),
-        liner: parseNumber(row[11] || "0"),
-        total: parseNumber(row[12] || "0"),
+        studio: parseNumber(row[7] || "0"),   // Column H (ST) - skip column G (#)
+        oneBR: parseNumber(row[8] || "0"),    // Column I (1 BR)
+        twoBR: parseNumber(row[9] || "0"),    // Column J (2 BR)
+        threeBR: parseNumber(row[10] || "0"), // Column K (3 BR)
+        fourBR: parseNumber(row[11] || "0"),  // Column L (4 BR)
+        liner: parseNumber(row[12] || "0"),   // Column M (LINER)
+        total: parseNumber(row[13] || "0"),   // Column N (Total Unit mix)
       },
       gfa: {
-        residential: parseNumber(row[13] || "0"),
-        commercial: parseNumber(row[14] || "0"),
-        total: parseNumber(row[15] || "0"),
+        residential: parseNumber(row[14] || "0"),  // Column O (GFA RESI)
+        commercial: parseNumber(row[15] || "0"),   // Column P (GFA COMM)
+        total: parseNumber(row[16] || "0"),        // Column Q (GFA TOTAL)
       },
       sellableArea: {
-        residential: parseNumber(row[16] || "0"),
-        commercial: parseNumber(row[17] || "0"),
-        total: parseNumber(row[18] || "0"),
+        residential: parseNumber(row[17] || "0"),  // Column R (SA RESI)
+        commercial: parseNumber(row[18] || "0"),   // Column S (SA COMM)
+        total: parseNumber(row[19] || "0"),        // Column T (SA TOTAL)
       },
     }))
 
