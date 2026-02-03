@@ -115,23 +115,23 @@ export async function GET(request: Request) {
       location: row[5] || "",  // Column F: Location (MIA or RYD)
       status: (row[6] || "PIT") as "PIT" | "POT" | "PHT",  // Column G: Status (PIT, POT, PHT)
       unitMix: {
-        studio: parseNumber(row[8] || "0"),   // Column I (ST)
-        oneBR: parseNumber(row[9] || "0"),    // Column J (1 BR)
-        twoBR: parseNumber(row[10] || "0"),   // Column K (2 BR)
-        threeBR: parseNumber(row[11] || "0"), // Column L (3 BR)
-        fourBR: parseNumber(row[12] || "0"),  // Column M (4 BR)
-        liner: parseNumber(row[13] || "0"),   // Column N (LINER)
-        total: parseNumber(row[14] || "0"),   // Column O (Total Unit mix)
+        studio: parseNumber(row[7] || "0"),   // [7] ST (Studio)
+        oneBR: parseNumber(row[8] || "0"),    // [8] 1 BR
+        twoBR: parseNumber(row[9] || "0"),    // [9] 2 BR
+        threeBR: parseNumber(row[10] || "0"), // [10] 3 BR
+        fourBR: parseNumber(row[11] || "0"),  // [11] 4 BR
+        liner: parseNumber(row[12] || "0"),   // [12] LINER
+        total: parseNumber(row[13] || "0"),   // [13] Total Unit mix
       },
       gfa: {
-        residential: parseNumber(row[15] || "0"),  // Column P (GFA RESI)
-        commercial: parseNumber(row[16] || "0"),   // Column Q (GFA COMM)
-        total: parseNumber(row[17] || "0"),        // Column R (GFA TOTAL)
+        residential: parseNumber(row[14] || "0"),  // [14] GFA RESI
+        commercial: parseNumber(row[15] || "0"),   // [15] GFA COMM
+        total: parseNumber(row[16] || "0"),        // [16] GFA TOTAL
       },
       sellableArea: {
-        residential: parseNumber(row[18] || "0"),  // Column S (SA RESI)
-        commercial: parseNumber(row[19] || "0"),   // Column T (SA COMM)
-        total: parseNumber(row[20] || "0"),        // Column U (SA TOTAL)
+        residential: parseNumber(row[17] || "0"),  // [17] SA RESI
+        commercial: parseNumber(row[18] || "0"),   // [18] SA COMM
+        total: parseNumber(row[19] || "0"),        // [19] SA TOTAL
       },
     }))
 
