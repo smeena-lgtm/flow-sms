@@ -225,8 +225,8 @@ function AssetBar({
       <span className="text-xs text-text-muted w-12">{label}</span>
       <div className="flex-1 h-1.5 bg-bg-surface rounded-full overflow-hidden">
         <div
-          className={\`h-full \${color} rounded-full transition-all\`}
-          style={{ width: \`\${percentage}%\` }}
+          className={`h-full ${color} rounded-full transition-all`}
+          style={{ width: `${percentage}%` }}
         />
       </div>
       <span className="text-xs text-text-muted w-8 text-right">{percentage}%</span>
