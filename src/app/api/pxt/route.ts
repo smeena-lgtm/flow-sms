@@ -94,14 +94,14 @@ export async function GET(request: Request) {
     const dataRows = rows.slice(1).filter((row) => row[0] && row[2]) // Must have Sr. No. and Project Name
 
     // Debug: Log the first row to see column structure
-    // Column order from Google Sheet: Sr.No | PlotName | ProjectName | PlotArea | Status | Location | # | ST | 1BR | 2BR | 3BR | 4BR | LINER | Total | GFA_RESI | GFA_COMM | GFA_TOTAL | SA_RESI | SA_COMM | SA_TOTAL
+    // Column order from Google Sheet: Sr.No | PlotName | ProjectName | PlotArea | Location | Status | # | ST | 1BR | 2BR | 3BR | 4BR | LINER | Total | GFA_RESI | GFA_COMM | GFA_TOTAL | SA_RESI | SA_COMM | SA_TOTAL
     const projects: PXTProject[] = dataRows.map((row) => ({
       srNo: row[0] || "",
       plotName: row[1] || "",
       projectName: row[2] || "",
       plotArea: row[3] || "",
-      status: (row[4] || "PIT") as "PIT" | "POT" | "PHT",  // Column E: Status (PIT, POT, PHT)
-      location: row[5] || "",  // Column F: Location (MIA or RYD)
+      location: row[4] || "",  // Column E: Location (MIA or RYD)
+      status: (row[5] || "PIT") as "PIT" | "POT" | "PHT",  // Column F: Status (PIT, POT, PHT)
       unitMix: {
         studio: parseNumber(row[7] || "0"),   // Column H (ST) - skip column G (#)
         oneBR: parseNumber(row[8] || "0"),    // Column I (1 BR)
