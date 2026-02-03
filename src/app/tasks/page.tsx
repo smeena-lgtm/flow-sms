@@ -441,28 +441,24 @@ export default function TasksPage() {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats - Compact horizontal scroll on mobile */}
       {tasksData && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-          <Card className="bg-bg-card border-border-color">
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-text-primary">{tasksData.stats.total}</div>
-              <div className="text-xs text-text-secondary">Total</div>
-            </CardContent>
-          </Card>
+        <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 lg:mx-0 lg:px-0 lg:grid lg:grid-cols-6 lg:overflow-visible">
+          <div className="flex-shrink-0 w-24 lg:w-auto rounded-xl bg-bg-card border border-border-color p-3">
+            <div className="text-xl font-bold text-text-primary">{tasksData.stats.total}</div>
+            <div className="text-xs text-text-secondary">Total</div>
+          </div>
           {Object.entries(statusConfig).map(([status, config]) => {
             const Icon = config.icon
             const count = tasksData.stats[status === "in_progress" ? "inProgress" : status as keyof typeof tasksData.stats] || 0
             return (
-              <Card key={status} className={`bg-bg-card border ${config.borderColor}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2">
-                    <Icon className={`h-4 w-4 ${config.color}`} />
-                    <span className={`text-2xl font-bold ${config.color}`}>{count}</span>
-                  </div>
-                  <div className="text-xs text-text-secondary">{config.label}</div>
-                </CardContent>
-              </Card>
+              <div key={status} className={`flex-shrink-0 w-28 lg:w-auto rounded-xl bg-bg-card border ${config.borderColor} p-3`}>
+                <div className="flex items-center gap-1.5">
+                  <Icon className={`h-4 w-4 ${config.color}`} />
+                  <span className={`text-xl font-bold ${config.color}`}>{count}</span>
+                </div>
+                <div className="text-xs text-text-secondary truncate">{config.label}</div>
+              </div>
             )
           })}
         </div>
@@ -539,120 +535,115 @@ export default function TasksPage() {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 overflow-x-auto">
-          {Object.entries(statusConfig).map(([status, config]) => {
-            const Icon = config.icon
-            const tasks = tasksData?.grouped[status as keyof typeof tasksData.grouped] || []
+        <div className="relative -mx-4 lg:mx-0">
+          {/* Horizontal scroll container */}
+          <div className="flex gap-4 overflow-x-auto px-4 lg:px-0 pb-4 snap-x snap-mandatory">
+            {Object.entries(statusConfig).map(([status, config]) => {
+              const Icon = config.icon
+              const tasks = tasksData?.grouped[status as keyof typeof tasksData.grouped] || []
 
-            return (
-              <div key={status} className="min-w-[280px]">
-                {/* Column Header */}
-                <div className={`flex items-center gap-2 p-3 rounded-t-lg ${config.bgColor} border-b-2 ${config.borderColor}`}>
-                  <Icon className={`h-4 w-4 ${config.color}`} />
-                  <span className={`font-medium ${config.color}`}>{config.label}</span>
-                  <Badge variant="secondary" className="ml-auto">
-                    {tasks.length}
-                  </Badge>
-                </div>
+              return (
+                <div key={status} className="flex-shrink-0 w-72 snap-start">
+                  {/* Column Header */}
+                  <div className={`flex items-center gap-2 px-3 py-2.5 rounded-t-xl ${config.bgColor} border-b-2 ${config.borderColor}`}>
+                    <Icon className={`h-4 w-4 ${config.color}`} />
+                    <span className={`font-medium text-sm ${config.color}`}>{config.label}</span>
+                    <Badge variant="secondary" className="ml-auto text-xs">
+                      {tasks.length}
+                    </Badge>
+                  </div>
 
-                {/* Tasks */}
-                <div className="space-y-3 p-3 bg-bg-dark/50 rounded-b-lg min-h-[400px]">
-                  {tasks.map((task) => {
-                    const dueInfo = formatDate(task.dueDate)
-                    const priorityInfo = priorityConfig[task.priority]
+                  {/* Tasks */}
+                  <div className="space-y-2 p-2 bg-bg-dark/50 rounded-b-xl min-h-[50vh] max-h-[65vh] overflow-y-auto">
+                    {tasks.length === 0 ? (
+                      <div className="text-center py-8 text-text-muted text-sm">
+                        No tasks
+                      </div>
+                    ) : (
+                      tasks.map((task) => {
+                        const dueInfo = formatDate(task.dueDate)
+                        const priorityInfo = priorityConfig[task.priority]
 
-                    return (
-                      <Card
-                        key={task.id}
-                        className="bg-bg-card border-border-color hover:border-ocean-swell/30 transition-all cursor-pointer"
-                      >
-                        <CardContent className="p-4 space-y-3">
-                          {/* Title and Menu */}
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-medium text-text-primary text-sm leading-tight">
-                              {task.title}
-                            </h4>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {Object.entries(statusConfig).map(([s, c]) => (
+                        return (
+                          <div
+                            key={task.id}
+                            className="rounded-xl bg-bg-card border border-border-color hover:border-ocean-swell/30 transition-all p-3 space-y-2"
+                          >
+                            {/* Title and Menu */}
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="font-medium text-text-primary text-sm leading-snug line-clamp-2">
+                                {task.title}
+                              </h4>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  {Object.entries(statusConfig).map(([s, c]) => (
+                                    <DropdownMenuItem
+                                      key={s}
+                                      onClick={() => handleStatusChange(task.id, s)}
+                                      disabled={s === status}
+                                    >
+                                      <c.icon className={`h-4 w-4 mr-2 ${c.color}`} />
+                                      Move to {c.label}
+                                    </DropdownMenuItem>
+                                  ))}
                                   <DropdownMenuItem
-                                    key={s}
-                                    onClick={() => handleStatusChange(task.id, s)}
-                                    disabled={s === status}
+                                    onClick={() => handleDeleteTask(task.id)}
+                                    className="text-heart"
                                   >
-                                    <c.icon className={`h-4 w-4 mr-2 ${c.color}`} />
-                                    Move to {c.label}
+                                    <X className="h-4 w-4 mr-2" />
+                                    Delete
                                   </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteTask(task.id)}
-                                  className="text-heart"
-                                >
-                                  <X className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-
-                          {/* Project */}
-                          <Badge variant="secondary" className="text-xs">
-                            {task.project.name}
-                          </Badge>
-
-                          {/* Meta */}
-                          <div className="flex items-center gap-3 flex-wrap">
-                            {/* Priority */}
-                            <div className={`flex items-center gap-1 text-xs ${priorityInfo.color}`}>
-                              <Flag className="h-3 w-3" />
-                              {priorityInfo.label}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
 
-                            {/* Due Date */}
-                            {dueInfo && (
-                              <div
-                                className={`flex items-center gap-1 text-xs ${
-                                  dueInfo.isOverdue ? "text-heart" : "text-text-secondary"
-                                }`}
-                              >
-                                <Calendar className="h-3 w-3" />
-                                {dueInfo.text}
-                              </div>
-                            )}
+                            {/* Project */}
+                            <Badge variant="secondary" className="text-xs truncate max-w-full">
+                              {task.project.name}
+                            </Badge>
 
-                            {/* Comments */}
-                            {task._count.comments > 0 && (
-                              <div className="flex items-center gap-1 text-xs text-text-secondary">
-                                <MessageSquare className="h-3 w-3" />
-                                {task._count.comments}
+                            {/* Meta Row */}
+                            <div className="flex items-center gap-2 text-xs flex-wrap">
+                              {/* Priority */}
+                              <span className={`flex items-center gap-1 ${priorityInfo.color}`}>
+                                <Flag className="h-3 w-3" />
+                                {priorityInfo.label}
+                              </span>
+
+                              {/* Due Date */}
+                              {dueInfo && (
+                                <span className={`flex items-center gap-1 ${dueInfo.isOverdue ? "text-heart" : "text-text-muted"}`}>
+                                  <Calendar className="h-3 w-3" />
+                                  {dueInfo.text}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Assignee */}
+                            {task.assignee && (
+                              <div className="flex items-center gap-2 pt-2 border-t border-border-color/50">
+                                <Avatar className="h-5 w-5">
+                                  <AvatarFallback className="text-[10px] bg-ocean-swell/20 text-ocean-swell">
+                                    {getInitials(task.assignee.name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-xs text-text-muted truncate">{task.assignee.name}</span>
                               </div>
                             )}
                           </div>
-
-                          {/* Assignee */}
-                          {task.assignee && (
-                            <div className="flex items-center gap-2 pt-1 border-t border-border-color">
-                              <Avatar className="h-6 w-6">
-                                <AvatarFallback className="text-xs bg-ocean-swell/20 text-ocean-swell">
-                                  {getInitials(task.assignee.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="text-xs text-text-secondary">{task.assignee.name}</span>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
+                        )
+                      })
+                    )}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       )}
     </div>
