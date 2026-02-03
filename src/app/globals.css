@@ -5,19 +5,45 @@
 @tailwind utilities;
 
 :root {
-  --midnight: #3D3D3D;
+  /* Brand Colors */
+  --midnight: #0f1629;
   --moonlight: #F3EDDF;
-  --ocean-swell: #7DADBB;
-  --heart: #F99AA9;
-  --sunlight: #E89700;
+  --ocean-swell: #6366f1;
+  --heart: #f472b6;
+  --sunlight: #fbbf24;
   --roots: #8C4500;
   --olive: #767317;
-  --bg-dark: #2D2D2D;
-  --bg-card: #3D3D3D;
-  --bg-hover: #4D4D4D;
-  --text-primary: #F3EDDF;
-  --text-secondary: #A0A0A0;
-  --border-color: #4D4D4D;
+
+  /* Dark Navy Theme - Matching Dashboard Design */
+  --bg-dark: #0a0e1a;
+  --bg-card: #111827;
+  --bg-card-hover: #1e293b;
+  --bg-hover: #1e293b;
+  --bg-surface: #0f172a;
+
+  /* Text Colors */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Border */
+  --border-color: #1e293b;
+  --border-light: #334155;
+
+  /* Accent Colors */
+  --accent-blue: #6366f1;
+  --accent-purple: #a855f7;
+  --accent-pink: #f472b6;
+  --accent-green: #22c55e;
+  --accent-yellow: #fbbf24;
+  --accent-red: #ef4444;
+  --accent-cyan: #06b6d4;
+
+  /* Chart Colors */
+  --chart-1: #fbbf24;
+  --chart-2: #6366f1;
+  --chart-3: #22c55e;
+  --chart-4: #f472b6;
 }
 
 * {
