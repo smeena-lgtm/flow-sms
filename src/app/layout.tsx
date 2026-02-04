@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import { AuthProvider } from "@/context/AuthContext"
+import { DashboardWrapper } from "@/components/layout/DashboardWrapper"
 
 export const metadata: Metadata = {
   title: "Flow SMS | Studio Management System",
@@ -16,7 +17,9 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased bg-bg-dark text-text-primary font-sans">
         <AuthProvider>
-          {children}
+          <DashboardWrapper>
+            {children}
+          </DashboardWrapper>
         </AuthProvider>
       </body>
     </html>
