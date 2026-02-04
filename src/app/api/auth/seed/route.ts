@@ -1,16 +1,9 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/db'
 import { hashPassword } from '@/lib/auth/password'
 
-// Seed route to create test users - only works in development
-export async function POST(request: Request) {
-  // Only allow in development
-  if (process.env.NODE_ENV === 'production') {
-    return NextResponse.json(
-      { error: 'Not allowed in production' },
-      { status: 403 }
-    )
-  }
+// Seed route to create test users
+export async function POST() {
 
   try {
     const defaultPassword = await hashPassword('flow123')

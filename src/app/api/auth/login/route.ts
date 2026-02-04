@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/lib/db'
 import { comparePassword } from '@/lib/auth/password'
 import { signToken } from '@/lib/auth/jwt'
 import { getSimplifiedRole } from '@/lib/auth/roles'
