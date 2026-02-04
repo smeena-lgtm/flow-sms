@@ -54,7 +54,7 @@ export async function POST() {
   } catch (error) {
     console.error('Seed error:', error)
     return NextResponse.json(
-      { error: 'Failed to seed users' },
+      { error: 'Failed to seed users', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
