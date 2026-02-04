@@ -177,13 +177,16 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Project Status Donut */}
         <div className="rounded-2xl bg-bg-card border border-border-color p-6">
-          <h3 className="text-lg font-semibold text-text-primary mb-4">
+          <h3 className="text-lg font-semibold text-text-primary mb-6">
             Projects by Status
           </h3>
           {projectStatusData.length > 0 ? (
-            <div className="flex items-center justify-center">
-              <DonutChart data={projectStatusData} size={160} strokeWidth={24} />
-            </div>
+            <DonutChart
+              data={projectStatusData}
+              size={140}
+              strokeWidth={14}
+              title="Projects"
+            />
           ) : (
             <div className="text-center py-8 text-text-muted">No project data</div>
           )}
@@ -191,13 +194,16 @@ export default function AnalyticsPage() {
 
         {/* Location Breakdown */}
         <div className="rounded-2xl bg-bg-card border border-border-color p-6">
-          <h3 className="text-lg font-semibold text-text-primary mb-4">
+          <h3 className="text-lg font-semibold text-text-primary mb-6">
             Projects by Location
           </h3>
           {locationData.length > 0 ? (
-            <div className="flex items-center justify-center">
-              <DonutChart data={locationData} size={160} strokeWidth={24} />
-            </div>
+            <DonutChart
+              data={locationData}
+              size={140}
+              strokeWidth={14}
+              title="Projects"
+            />
           ) : (
             <div className="text-center py-8 text-text-muted">No location data</div>
           )}

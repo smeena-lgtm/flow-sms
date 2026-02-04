@@ -77,12 +77,14 @@ enum DocumentCategory {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
+  passwordHash  String?   // Bcrypt hashed password
   name          String
   role          UserRole  @default(viewer)
   avatar        String?
   phone         String?
   department    String?
   isActive      Boolean   @default(true)
+  lastLogin     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useAuth, useRequireRole } from "@/context/AuthContext"
 import {
   LayoutDashboard,
   FolderKanban,
@@ -17,6 +18,7 @@ import {
   ChevronRight,
   LogOut,
   HelpCircle,
+  Shield,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -24,14 +26,15 @@ interface NavItem {
   name: string
   href: string
   icon: any
+  roles?: Array<'ADMIN' | 'MANAGER' | 'USER'>
   children?: { name: string; href: string }[]
 }
 
 const navigation: NavItem[] = [
   { name: "Analytics", href: "/", icon: LayoutDashboard },
   { name: "Projects", href: "/projects", icon: FolderKanban },
-  { name: "HR", href: "/hr", icon: Users },
-  { name: "Finance", href: "/finance", icon: DollarSign },
+  { name: "HR", href: "/hr", icon: Users, roles: ['ADMIN', 'MANAGER'] },
+  { name: "Finance", href: "/finance", icon: DollarSign, roles: ['ADMIN'] },
   { name: "Tasks", href: "/tasks", icon: ListTodo },
   { name: "Documents", href: "/documents", icon: FileText },
 ]
@@ -42,6 +45,7 @@ const bottomNavigation = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { user, logout } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [expandedItems, setExpandedItems] = useState<string[]>([])
 
@@ -54,6 +58,32 @@ export function Sidebar() {
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/"
     return pathname.startsWith(href.split("?")[0])
+  }
+
+  // Filter navigation based on user role
+  const filteredNavigation = navigation.filter((item) => {
+    if (!item.roles) return true
+    return user && item.roles.includes(user.role)
+  })
+
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'ADMIN':
+        return 'bg-accent-red/15 text-accent-red'
+      case 'MANAGER':
+        return 'bg-accent-blue/15 text-accent-blue'
+      default:
+        return 'bg-accent-green/15 text-accent-green'
+    }
+  }
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
   }
 
   const NavLink = ({ item, isChild = false }: { item: NavItem | { name: string; href: string }; isChild?: boolean }) => {
@@ -141,7 +171,7 @@ export function Sidebar() {
       {/* Main Navigation */}
       <nav className="mt-8 px-4 flex-1 overflow-y-auto">
         <ul className="space-y-1">
-          {navigation.map((item, index) => (
+          {filteredNavigation.map((item, index) => (
             <li
               key={item.name}
               className="animate-fade-in"
@@ -163,7 +193,10 @@ export function Sidebar() {
             </li>
           ))}
           <li>
-            <button className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-text-secondary hover:bg-bg-card-hover hover:text-text-primary transition-all duration-200">
+            <button
+              onClick={logout}
+              className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-text-secondary hover:bg-bg-card-hover hover:text-text-primary transition-all duration-200"
+            >
               <LogOut className="h-5 w-5 text-text-muted" />
               <span>Sign Out</span>
             </button>
@@ -195,24 +228,33 @@ export function Sidebar() {
       </div>
 
       {/* User section */}
-      <div className="p-4 border-t border-border-color">
-        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-bg-card-hover transition-colors cursor-pointer group">
-          <div className="relative">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent-blue to-accent-pink flex items-center justify-center shadow-md">
-              <span className="text-sm font-semibold text-white">SM</span>
+      {user && (
+        <div className="p-4 border-t border-border-color">
+          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-bg-card-hover transition-colors cursor-pointer group">
+            <div className="relative">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent-blue to-accent-pink flex items-center justify-center shadow-md">
+                <span className="text-sm font-semibold text-white">
+                  {getInitials(user.name)}
+                </span>
+              </div>
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-accent-green border-2 border-bg-dark rounded-full" />
             </div>
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-accent-green border-2 border-bg-dark rounded-full" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-text-primary truncate">
-              Swapnil Meena
-            </p>
-            <p className="text-xs text-text-muted truncate">
-              Admin
-            </p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-text-primary truncate">
+                {user.name}
+              </p>
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  "text-[10px] font-semibold px-1.5 py-0.5 rounded",
+                  getRoleBadgeColor(user.role)
+                )}>
+                  {user.role}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 
