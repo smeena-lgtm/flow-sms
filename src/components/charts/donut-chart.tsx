@@ -112,7 +112,6 @@ export function DonutChart({
                   className="w-3 h-3 rounded-full ring-2 ring-offset-2 ring-offset-bg-card transition-all duration-200 group-hover:scale-110"
                   style={{
                     backgroundColor: item.color,
-                    // @ts-expect-error - CSS custom property for Tailwind ring color
                     '--tw-ring-color': `${item.color}40`,
                   } as React.CSSProperties}
                 />
