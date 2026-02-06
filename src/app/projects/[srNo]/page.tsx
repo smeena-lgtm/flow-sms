@@ -27,7 +27,7 @@ export default function BuildingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const plotNo = decodeURIComponent(params.srNo as string)
+  const projectId = decodeURIComponent(params.srNo as string)
 
   useEffect(() => {
     async function fetchBuilding() {
@@ -36,8 +36,14 @@ export default function BuildingDetailPage() {
         const res = await fetch("/api/pxt")
         if (!res.ok) throw new Error("Failed to fetch")
         const data = await res.json()
+        // Search by plotNo first, then by marketingName as fallback
         const found = data.buildings.find(
-          (b: BuildingInfo) => b.identity.plotNo === plotNo
+          (b: BuildingInfo) =>
+            b.identity.plotNo === projectId ||
+            b.identity.marketingName === projectId ||
+            // Also check URL-friendly versions
+            encodeURIComponent(b.identity.plotNo) === projectId ||
+            encodeURIComponent(b.identity.marketingName) === projectId
         )
         if (!found) throw new Error("Building not found")
         setBuilding(found)
@@ -48,7 +54,7 @@ export default function BuildingDetailPage() {
       }
     }
     fetchBuilding()
-  }, [plotNo])
+  }, [projectId])
 
   if (loading) {
     return (

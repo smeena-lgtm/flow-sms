@@ -134,8 +134,16 @@ export default function ProjectsPage() {
     ? Array.from(new Set(data.buildings.map((b) => b.identity.designManager))).filter(Boolean)
     : []
 
-  const handleBuildingClick = (plotNo: string) => {
-    router.push(`/projects/${encodeURIComponent(plotNo)}`)
+  // Use plotNo if available, otherwise use marketingName as identifier
+  const getProjectId = (building: BuildingInfo) => {
+    return building.identity.plotNo || building.identity.marketingName
+  }
+
+  const handleBuildingClick = (building: BuildingInfo) => {
+    const projectId = getProjectId(building)
+    if (projectId) {
+      router.push(`/projects/${encodeURIComponent(projectId)}`)
+    }
   }
 
   const formatNumber = (num: number) => {
@@ -367,8 +375,8 @@ export default function ProjectsPage() {
               <tbody className="divide-y divide-border-color">
                 {buildings.map((building, index) => (
                   <tr
-                    key={building.identity.plotNo || index}
-                    onClick={() => handleBuildingClick(building.identity.plotNo)}
+                    key={building.identity.plotNo || building.identity.marketingName || index}
+                    onClick={() => handleBuildingClick(building)}
                     className="hover:bg-bg-card-hover transition-colors cursor-pointer group"
                   >
                     <td className="px-4 py-4">
