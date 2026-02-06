@@ -90,7 +90,7 @@ export default function ProjectsPage() {
 
   const buildings = getFilteredAndSortedBuildings()
   const designManagers = data
-    ? [...new Set(data.buildings.map((b) => b.identity.designManager))].filter(Boolean)
+    ? Array.from(new Set(data.buildings.map((b) => b.identity.designManager))).filter(Boolean)
     : []
 
   const handleBuildingClick = (plotNo: string) => {
