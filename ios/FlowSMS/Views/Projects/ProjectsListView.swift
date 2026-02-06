@@ -1,41 +1,86 @@
 import SwiftUI
 
 struct ProjectsListView: View {
-    @StateObject private var viewModel = ProjectsListViewModel()
-    @State private var selectedFilter: ProjectType? = nil
+    @StateObject private var viewModel = BuildingsListViewModel()
+    @State private var selectedTab: BuildingStatus? = nil
     @State private var searchText = ""
 
-    var filteredProjects: [Project] {
-        var projects = viewModel.projects
+    var filteredBuildings: [BuildingInfo] {
+        var buildings: [BuildingInfo]
 
-        if let filter = selectedFilter {
-            projects = projects.filter { $0.type == filter }
+        // Filter by status tab
+        if let tab = selectedTab {
+            switch tab {
+            case .PIT:
+                buildings = viewModel.response?.grouped.pit ?? []
+            case .POT:
+                buildings = viewModel.response?.grouped.pot ?? []
+            case .PHT:
+                buildings = viewModel.response?.grouped.pht ?? []
+            case .unknown:
+                buildings = viewModel.response?.buildings ?? []
+            }
+        } else {
+            buildings = viewModel.response?.buildings ?? []
         }
 
+        // Search filter
         if !searchText.isEmpty {
-            projects = projects.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText) ||
-                $0.client.localizedCaseInsensitiveContains(searchText)
+            buildings = buildings.filter {
+                $0.identity.displayName.localizedCaseInsensitiveContains(searchText) ||
+                $0.identity.plotNo.localizedCaseInsensitiveContains(searchText) ||
+                $0.identity.designManager.localizedCaseInsensitiveContains(searchText)
             }
         }
 
-        return projects
+        return buildings
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                // Filter Pills
+                // Stats Summary
+                if let stats = viewModel.response?.stats {
+                    StatsRow(stats: stats)
+                }
+
+                // Status Tab Pills
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        FilterPill(title: "All", isSelected: selectedFilter == nil) {
-                            selectedFilter = nil
+                        StatusPill(
+                            title: "All",
+                            count: viewModel.response?.stats.totalBuildings ?? 0,
+                            isSelected: selectedTab == nil,
+                            color: .oceanSwell
+                        ) {
+                            selectedTab = nil
                         }
 
-                        ForEach(ProjectType.allCases, id: \.self) { type in
-                            FilterPill(title: type.displayName, isSelected: selectedFilter == type) {
-                                selectedFilter = type
-                            }
+                        StatusPill(
+                            title: "PIT",
+                            count: viewModel.response?.stats.byStatus.pit ?? 0,
+                            isSelected: selectedTab == .PIT,
+                            color: .sunlight
+                        ) {
+                            selectedTab = .PIT
+                        }
+
+                        StatusPill(
+                            title: "POT",
+                            count: viewModel.response?.stats.byStatus.pot ?? 0,
+                            isSelected: selectedTab == .POT,
+                            color: .green
+                        ) {
+                            selectedTab = .POT
+                        }
+
+                        StatusPill(
+                            title: "PHT",
+                            count: viewModel.response?.stats.byStatus.pht ?? 0,
+                            isSelected: selectedTab == .PHT,
+                            color: .purple
+                        ) {
+                            selectedTab = .PHT
                         }
                     }
                     .padding(.horizontal)
@@ -47,13 +92,22 @@ struct ProjectsListView: View {
                         .padding(.top, 50)
                 } else if let error = viewModel.error {
                     ErrorView(message: error) {
-                        Task { await viewModel.loadProjects() }
+                        Task { await viewModel.loadBuildings() }
                     }
                 } else {
+                    // Results count
+                    HStack {
+                        Text("\(filteredBuildings.count) projects")
+                            .font(.caption)
+                            .foregroundColor(.textSecondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+
                     LazyVStack(spacing: 12) {
-                        ForEach(filteredProjects) { project in
-                            NavigationLink(destination: ProjectDetailView(projectId: project.id)) {
-                                ProjectListCard(project: project)
+                        ForEach(filteredBuildings) { building in
+                            NavigationLink(destination: BuildingDetailView(buildingId: building.id)) {
+                                BuildingListCard(building: building)
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
@@ -68,229 +122,280 @@ struct ProjectsListView: View {
         .navigationBarTitleDisplayMode(.large)
         .searchable(text: $searchText, prompt: "Search projects...")
         .refreshable {
-            await viewModel.loadProjects()
+            await viewModel.loadBuildings()
         }
         .task {
-            await viewModel.loadProjects()
+            await viewModel.loadBuildings()
         }
     }
 }
 
-// MARK: - Project List Card (uses full Project model)
+// MARK: - Stats Row
 
-struct ProjectListCard: View {
-    let project: Project
+struct StatsRow: View {
+    let stats: BuildingInfoStats
 
-    var statusColor: Color {
-        switch project.status {
-        case .active: return .oceanSwell
-        case .on_hold: return .sunlight
-        case .completed: return .green
-        case .planning, .archived: return .textSecondary
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                MiniStatCard(label: "Total", value: "\(stats.totalBuildings)", color: .oceanSwell)
+                MiniStatCard(label: "Units", value: formatNumber(stats.totalUnits), color: .purple)
+                MiniStatCard(label: "Miami", value: "\(stats.byLocation.miami)", color: .cyan)
+                MiniStatCard(label: "Riyadh", value: "\(stats.byLocation.riyadh)", color: .sunlight)
+            }
+            .padding(.horizontal)
         }
     }
 
-    var typeColor: Color {
-        switch project.type {
-        case .architecture: return .oceanSwell
-        case .interior: return .heart
-        case .engineering: return .sunlight
-        case .mixed: return .olive
+    func formatNumber(_ num: Double) -> String {
+        if num >= 1_000_000 {
+            return String(format: "%.1fM", num / 1_000_000)
+        } else if num >= 1_000 {
+            return String(format: "%.0fK", num / 1_000)
+        }
+        return String(format: "%.0f", num)
+    }
+}
+
+struct MiniStatCard: View {
+    let label: String
+    let value: String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.textSecondary)
+            Text(value)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(.textPrimary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.bgCard)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(color.opacity(0.3), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Status Pill
+
+struct StatusPill: View {
+    let title: String
+    let count: Int
+    let isSelected: Bool
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Text(title)
+                    .fontWeight(isSelected ? .semibold : .regular)
+                Text("\(count)")
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(isSelected ? Color.white.opacity(0.2) : Color.bgHover)
+                    .clipShape(Capsule())
+            }
+            .font(.subheadline)
+            .foregroundColor(isSelected ? .midnight : .textSecondary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(isSelected ? color : Color.bgCard)
+            .clipShape(Capsule())
         }
     }
+}
+
+// MARK: - Building List Card
+
+struct BuildingListCard: View {
+    let building: BuildingInfo
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(statusColor)
-                            .frame(width: 8, height: 8)
-                        Text(project.status.displayName)
-                            .font(.caption)
-                            .foregroundColor(.textSecondary)
-                    }
+            HStack(alignment: .top) {
+                // Location icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            LinearGradient(
+                                colors: building.identity.locationEnum == .MIA
+                                    ? [.cyan, .oceanSwell]
+                                    : [.sunlight, .orange],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 44, height: 44)
 
-                    Text(project.name)
+                    Text(String(building.identity.displayName.prefix(1)))
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(building.identity.displayName)
                         .font(.headline)
                         .foregroundColor(.textPrimary)
                         .lineLimit(1)
 
-                    Text(project.client)
-                        .font(.subheadline)
-                        .foregroundColor(.textSecondary)
+                    if !building.identity.plotNo.isEmpty {
+                        Text(building.identity.plotNo)
+                            .font(.caption)
+                            .foregroundColor(.textSecondary)
+                    }
+                }
+
+                Spacer()
+
+                // Status badge
+                Text(building.identity.statusEnum.shortName)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(building.identity.statusEnum.color)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(building.identity.statusEnum.color.opacity(0.15))
+                    .clipShape(Capsule())
+            }
+
+            // Location & DM
+            HStack(spacing: 16) {
+                HStack(spacing: 4) {
+                    Image(systemName: "mappin")
+                        .font(.caption2)
+                    Text(building.identity.locationEnum.displayName)
+                        .font(.caption)
+                }
+                .foregroundColor(.textSecondary)
+
+                if !building.identity.designManager.isEmpty {
+                    HStack(spacing: 4) {
+                        Image(systemName: "person")
+                            .font(.caption2)
+                        Text(building.identity.designManager)
+                            .font(.caption)
+                    }
+                    .foregroundColor(.purple)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .foregroundColor(.textSecondary)
-                    .font(.caption)
-            }
-
-            // Type Badge
-            Text(project.type.displayName)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(typeColor)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(typeColor.opacity(0.15))
-                .clipShape(Capsule())
-
-            // Progress
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Progress")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                    Spacer()
-                    Text("\(project.progress)%")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.textPrimary)
-                }
-
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.bgHover)
-                            .frame(height: 6)
-
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.oceanSwell)
-                            .frame(width: geometry.size.width * CGFloat(project.progress) / 100, height: 6)
-                    }
-                }
-                .frame(height: 6)
-            }
-
-            // Location & Date
-            if let location = project.location {
-                HStack(spacing: 12) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "mappin")
-                            .font(.caption2)
-                        Text(location)
-                            .font(.caption)
-                            .lineLimit(1)
-                    }
-                    .foregroundColor(.textSecondary)
-
-                    if let endDate = project.endDate {
-                        HStack(spacing: 4) {
-                            Image(systemName: "calendar")
-                                .font(.caption2)
-                            Text(formatDate(endDate))
-                                .font(.caption)
-                        }
-                        .foregroundColor(.textSecondary)
-                    }
-                }
-            }
-
-            // Team Avatars
-            HStack(spacing: -8) {
-                ForEach(project.team.prefix(4)) { member in
-                    Circle()
-                        .fill(Color.oceanSwell)
-                        .frame(width: 28, height: 28)
-                        .overlay(
-                            Text(initials(from: member.name))
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(.midnight)
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(Color.bgCard, lineWidth: 2)
-                        )
-                }
-
-                if project.team.count > 4 {
-                    Circle()
-                        .fill(Color.bgHover)
-                        .frame(width: 28, height: 28)
-                        .overlay(
-                            Text("+\(project.team.count - 4)")
-                                .font(.system(size: 10, weight: .medium))
-                                .foregroundColor(.textSecondary)
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(Color.bgCard, lineWidth: 2)
-                        )
-                }
-
-                Spacer()
-
-                Text("\(project.team.count) members")
                     .font(.caption)
                     .foregroundColor(.textSecondary)
             }
+
+            // Key metrics
+            HStack(spacing: 0) {
+                MetricItem(label: "Units", value: "\(Int(building.unitCounts.total))")
+                Divider().frame(height: 30)
+                MetricItem(label: "GFA", value: formatArea(building.gfa.totalProposedGfaFt2))
+                Divider().frame(height: 30)
+                MetricItem(
+                    label: "Efficiency",
+                    value: formatPercent(building.totalSellable.efficiencySaGfa),
+                    highlight: building.totalSellable.efficiencySaGfa >= 0.9
+                )
+            }
+            .padding(.vertical, 8)
+            .background(Color.bgSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .padding(16)
         .background(Color.bgCard)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
-    private func initials(from name: String) -> String {
-        name.split(separator: " ")
-            .prefix(2)
-            .compactMap { $0.first }
-            .map { String($0) }
-            .joined()
+    func formatArea(_ value: Double) -> String {
+        if value >= 1_000_000 {
+            return String(format: "%.1fM", value / 1_000_000)
+        } else if value >= 1_000 {
+            return String(format: "%.0fK", value / 1_000)
+        }
+        return String(format: "%.0f", value)
     }
 
-    private func formatDate(_ dateString: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-
-        if let date = formatter.date(from: dateString) {
-            let displayFormatter = DateFormatter()
-            displayFormatter.dateFormat = "MMM yyyy"
-            return displayFormatter.string(from: date)
-        }
-        return dateString
+    func formatPercent(_ value: Double) -> String {
+        return String(format: "%.1f%%", value * 100)
     }
 }
 
-// MARK: - Filter Pill
-
-struct FilterPill: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
+struct MetricItem: View {
+    let label: String
+    let value: String
+    var highlight: Bool = false
 
     var body: some View {
-        Button(action: action) {
-            Text(title)
+        VStack(spacing: 2) {
+            Text(value)
                 .font(.subheadline)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundColor(isSelected ? .midnight : .textSecondary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? Color.oceanSwell : Color.bgCard)
-                .clipShape(Capsule())
+                .fontWeight(.semibold)
+                .foregroundColor(highlight ? .green : .textPrimary)
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(.textSecondary)
         }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Error View
+
+struct ErrorView: View {
+    let message: String
+    let retryAction: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.largeTitle)
+                .foregroundColor(.sunlight)
+
+            Text(message)
+                .font(.subheadline)
+                .foregroundColor(.textSecondary)
+                .multilineTextAlignment(.center)
+
+            Button(action: retryAction) {
+                Text("Retry")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.midnight)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(Color.oceanSwell)
+                    .clipShape(Capsule())
+            }
+        }
+        .padding()
     }
 }
 
 // MARK: - View Model
 
 @MainActor
-class ProjectsListViewModel: ObservableObject {
-    @Published var projects: [Project] = []
+class BuildingsListViewModel: ObservableObject {
+    @Published var response: BuildingInfoResponse?
     @Published var isLoading = false
     @Published var error: String?
 
-    func loadProjects() async {
+    func loadBuildings() async {
         isLoading = true
         error = nil
 
         do {
-            projects = try await APIService.shared.fetchProjects()
+            response = try await APIService.shared.fetchBuildings()
         } catch {
             self.error = error.localizedDescription
         }

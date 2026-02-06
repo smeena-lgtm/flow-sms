@@ -51,7 +51,13 @@ class APIService: ObservableObject {
         return try await fetch(endpoint: "/dashboard")
     }
 
-    // MARK: - Projects
+    // MARK: - Buildings (PXT API)
+
+    func fetchBuildings() async throws -> BuildingInfoResponse {
+        return try await fetch(endpoint: "/pxt")
+    }
+
+    // MARK: - Legacy Projects (kept for compatibility)
 
     func fetchProjects() async throws -> [Project] {
         return try await fetch(endpoint: "/projects")

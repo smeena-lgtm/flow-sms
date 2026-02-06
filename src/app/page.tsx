@@ -253,73 +253,73 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* Charts Row - 2x2 Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Charts Row - 2x2 Grid with more space */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* By Location */}
-        <div className="rounded-2xl bg-bg-card border border-border-color p-5">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">
+        <div className="rounded-2xl bg-bg-card border border-border-color p-6">
+          <h3 className="text-base font-semibold text-text-primary mb-6">
             By Location
           </h3>
           {locationData.length > 0 ? (
             <DonutChart
               data={locationData}
-              size={100}
-              strokeWidth={12}
+              size={140}
+              strokeWidth={14}
               title="Projects"
             />
           ) : (
-            <div className="text-center py-6 text-text-muted text-sm">No data</div>
+            <div className="text-center py-8 text-text-muted">No data</div>
           )}
         </div>
 
         {/* By Status */}
-        <div className="rounded-2xl bg-bg-card border border-border-color p-5">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">
+        <div className="rounded-2xl bg-bg-card border border-border-color p-6">
+          <h3 className="text-base font-semibold text-text-primary mb-6">
             By Status
           </h3>
           {statusData.length > 0 ? (
             <DonutChart
               data={statusData}
-              size={100}
-              strokeWidth={12}
+              size={140}
+              strokeWidth={14}
               title="Projects"
             />
           ) : (
-            <div className="text-center py-6 text-text-muted text-sm">No data</div>
+            <div className="text-center py-8 text-text-muted">No data</div>
           )}
         </div>
 
         {/* By Design Manager */}
-        <div className="rounded-2xl bg-bg-card border border-border-color p-5">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">
+        <div className="rounded-2xl bg-bg-card border border-border-color p-6">
+          <h3 className="text-base font-semibold text-text-primary mb-6">
             By Design Manager
           </h3>
           {dmData.length > 0 ? (
             <DonutChart
               data={dmData}
-              size={100}
-              strokeWidth={12}
+              size={140}
+              strokeWidth={14}
               title="Buildings"
             />
           ) : (
-            <div className="text-center py-6 text-text-muted text-sm">No data</div>
+            <div className="text-center py-8 text-text-muted">No data</div>
           )}
         </div>
 
         {/* Efficiency Distribution */}
-        <div className="rounded-2xl bg-bg-card border border-border-color p-5">
-          <h3 className="text-sm font-semibold text-text-primary mb-4">
+        <div className="rounded-2xl bg-bg-card border border-border-color p-6">
+          <h3 className="text-base font-semibold text-text-primary mb-6">
             Efficiency Distribution
           </h3>
           {efficiencyData.length > 0 ? (
             <DonutChart
               data={efficiencyData}
-              size={100}
-              strokeWidth={12}
+              size={140}
+              strokeWidth={14}
               title="Buildings"
             />
           ) : (
-            <div className="text-center py-6 text-text-muted text-sm">No data</div>
+            <div className="text-center py-8 text-text-muted">No data</div>
           )}
         </div>
       </div>

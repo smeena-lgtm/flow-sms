@@ -14,6 +14,7 @@ extension Color {
     // UI Colors
     static let bgDark = Color(hex: "2D2D2D")
     static let bgCard = Color(hex: "3D3D3D")
+    static let bgSurface = Color(hex: "353535")
     static let bgHover = Color(hex: "4D4D4D")
     static let textPrimary = Color(hex: "F3EDDF")
     static let textSecondary = Color(hex: "A0A0A0")
