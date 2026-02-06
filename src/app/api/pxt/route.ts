@@ -46,22 +46,36 @@ function parseNullableNumber(value: string): number | null {
 }
 
 function parseBuilding(row: string[]): BuildingInfo {
-  // Column indices based on actual sheet structure:
-  // 0: Plot_No, 1: Marketing_Name, 2: Design_Manager, 3: Location, 4: Status, 5: No_of_Buildings, 6: Plot_Area, 7: FAR
-  // Then the rest of the columns shift by +2 from original schema
+  // Column indices based on actual sheet structure (104 columns):
+  // 0: Plot_No, 1: Marketing_Name, 2: Design_Manager, 3: Location, 4: Status
+  // 5: No_of_Buildings, 6: Plot_Area_ft2, 7: FAR
+  // 8-12: GFA section
+  // 13-21: Residential Sellable
+  // 22-30: Commercial Sellable
+  // 31-38: Total Sellable
+  // 39-46: AMI section (Area, Wellbeing, Community, Operations, WorkFlow, F+B, Outdoor, Pct)
+  // 47-53: Unit Counts (Studio, 1Bed, 2Bed, 3Bed, 4Bed, Liner, Total)
+  // 54-59: Unit Mix %
+  // 60-65: Balcony %
+  // 66-77: Rental/Condo Split
+  // 78-81: Retail & Grid
+  // 82-86: MEP Systems
+  // 87-94: Parking & Facade
+  // 95-101: Lifts & Height
+  // 102-103: BUA
   return {
     // S1 – Project Identity
     identity: {
       plotNo: row[0] || "",
       marketingName: row[1] || "",
       designManager: row[2] || "",
-      location: row[3] || "",      // NEW: MIA or RYD
-      status: row[4] || "",        // NEW: PIT, POT, PHT
+      location: row[3] || "",      // MIA or RYD
+      status: row[4] || "",        // PIT, POT, PHT
       numberOfBuildings: parseNumber(row[5]),
       plotAreaFt2: parseNumber(row[6]),
       far: parseNumber(row[7]),
     },
-    // S2 – Gross Floor Area (shifted +2)
+    // S2 – Gross Floor Area
     gfa: {
       resProposedGfaFt2: parseNumber(row[8]),
       resProposedGfaPct: parseNumber(row[9]),
@@ -69,7 +83,7 @@ function parseBuilding(row: string[]): BuildingInfo {
       comProposedGfaPct: parseNumber(row[11]),
       totalProposedGfaFt2: parseNumber(row[12]),
     },
-    // S3 – Residential Sellable (shifted +2)
+    // S3 – Residential Sellable
     residentialSellable: {
       suiteSelableFt2: parseNumber(row[13]),
       suiteSellableRatio: parseNumber(row[14]),
@@ -81,7 +95,7 @@ function parseBuilding(row: string[]): BuildingInfo {
       nonSellableRatio: parseNumber(row[20]),
       efficiencySaGfa: parseNumber(row[21]),
     },
-    // S4 – Commercial Sellable (shifted +2)
+    // S4 – Commercial Sellable
     commercialSellable: {
       suiteSellableFt2: parseNumber(row[22]),
       suiteSellableRatio: parseNumber(row[23]),
@@ -93,7 +107,7 @@ function parseBuilding(row: string[]): BuildingInfo {
       nonSellableRatio: parseNumber(row[29]),
       efficiencySaGfa: parseNumber(row[30]),
     },
-    // S5 – Total Sellable (shifted +2)
+    // S5 – Total Sellable
     totalSellable: {
       suiteSellableFt2: parseNumber(row[31]),
       suiteSellableRatio: parseNumber(row[32]),
@@ -104,32 +118,23 @@ function parseBuilding(row: string[]): BuildingInfo {
       nonSellableRatio: parseNumber(row[37]),
       efficiencySaGfa: parseNumber(row[38]),
     },
-    // S6 – AMI (shifted +2)
+    // S6 – AMI (expanded with subcategories)
     ami: {
       areaFt2: parseNumber(row[39]),
-      pct: parseNumber(row[40]),
+      pct: parseNumber(row[46]),  // AMI_Pct is at index 46
     },
-    // S6 – Unit Counts (shifted +2)
+    // Unit Counts (47-53)
     unitCounts: {
-      studio: parseNumber(row[41]),
-      oneBed: parseNumber(row[42]),
-      twoBed: parseNumber(row[43]),
-      threeBed: parseNumber(row[44]),
-      fourBed: parseNumber(row[45]),
-      liner: parseNumber(row[46]),
-      total: parseNumber(row[47]),
+      studio: parseNumber(row[47]),
+      oneBed: parseNumber(row[48]),
+      twoBed: parseNumber(row[49]),
+      threeBed: parseNumber(row[50]),
+      fourBed: parseNumber(row[51]),
+      liner: parseNumber(row[52]),
+      total: parseNumber(row[53]),
     },
-    // S6 – Unit Mix % (shifted +2)
+    // Unit Mix % (54-59)
     unitMixPct: {
-      studio: parseNumber(row[48]),
-      oneBed: parseNumber(row[49]),
-      twoBed: parseNumber(row[50]),
-      threeBed: parseNumber(row[51]),
-      fourBed: parseNumber(row[52]),
-      liner: parseNumber(row[53]),
-    },
-    // S6 – Balcony % (shifted +2)
-    balconyPct: {
       studio: parseNumber(row[54]),
       oneBed: parseNumber(row[55]),
       twoBed: parseNumber(row[56]),
@@ -137,55 +142,64 @@ function parseBuilding(row: string[]): BuildingInfo {
       fourBed: parseNumber(row[58]),
       liner: parseNumber(row[59]),
     },
-    // S6 – Rental/Condo Split (shifted +2)
+    // Balcony % (60-65)
+    balconyPct: {
+      studio: parseNumber(row[60]),
+      oneBed: parseNumber(row[61]),
+      twoBed: parseNumber(row[62]),
+      threeBed: parseNumber(row[63]),
+      fourBed: parseNumber(row[64]),
+      liner: parseNumber(row[65]),
+    },
+    // Rental/Condo Split (66-77)
     rentalCondoSplit: {
-      studio: { rental: parseNumber(row[60]), condo: parseNumber(row[61]) },
-      oneBed: { rental: parseNumber(row[62]), condo: parseNumber(row[63]) },
-      twoBed: { rental: parseNumber(row[64]), condo: parseNumber(row[65]) },
-      threeBed: { rental: parseNumber(row[66]), condo: parseNumber(row[67]) },
-      fourBed: { rental: parseNumber(row[68]), condo: parseNumber(row[69]) },
-      liner: { rental: parseNumber(row[70]), condo: parseNumber(row[71]) },
+      studio: { rental: parseNumber(row[66]), condo: parseNumber(row[67]) },
+      oneBed: { rental: parseNumber(row[68]), condo: parseNumber(row[69]) },
+      twoBed: { rental: parseNumber(row[70]), condo: parseNumber(row[71]) },
+      threeBed: { rental: parseNumber(row[72]), condo: parseNumber(row[73]) },
+      fourBed: { rental: parseNumber(row[74]), condo: parseNumber(row[75]) },
+      liner: { rental: parseNumber(row[76]), condo: parseNumber(row[77]) },
     },
-    // S7 – Retail & Grid (shifted +2)
+    // S7 – Retail & Grid (78-81)
     retailGrid: {
-      gridFt: parseNumber(row[72]),
-      retailSmallQty: parseNumber(row[73]),
-      retailCornerQty: parseNumber(row[74]),
-      retailRegularQty: parseNumber(row[75]),
+      gridFt: parseNumber(row[78]),
+      retailSmallQty: parseNumber(row[79]),
+      retailCornerQty: parseNumber(row[80]),
+      retailRegularQty: parseNumber(row[81]),
     },
-    // S8 – MEP Systems (shifted +2)
+    // S8 – MEP Systems (82-86)
     mep: {
-      electricalLoadKw: parseNumber(row[76]),
-      coolingLoadTr: parseNumber(row[77]),
-      waterDemandFt3Day: parseNumber(row[78]),
-      sewerageDemandFt3Day: parseNumber(row[79]),
-      gasDemandFt3Hr: parseNumber(row[80]),
+      electricalLoadKw: parseNumber(row[82]),
+      coolingLoadTr: parseNumber(row[83]),
+      waterDemandFt3Day: parseNumber(row[84]),
+      sewerageDemandFt3Day: parseNumber(row[85]),
+      gasDemandFt3Hr: parseNumber(row[86]),
     },
-    // S9 – Parking & Facade (shifted +2)
+    // S9 – Parking & Facade (87-94)
     parkingFacade: {
-      parkingRequired: parseNumber(row[81]),
-      parkingProposed: parseNumber(row[82]),
-      parkingEfficiencyFt2Car: parseNumber(row[83]),
-      additionalParking: parseNumber(row[84]),
-      evParkingLots: parseNumber(row[85]),
-      facadeGlazingPct: parseNumber(row[86]),
-      facadeSpandrelPct: parseNumber(row[87]),
-      facadeSolidPct: parseNumber(row[88]),
+      parkingRequired: parseNumber(row[87]),
+      parkingProposed: parseNumber(row[88]),
+      parkingEfficiencyFt2Car: parseNumber(row[89]),
+      additionalParking: parseNumber(row[90]),
+      evParkingLots: parseNumber(row[91]),
+      facadeGlazingPct: parseNumber(row[92]),
+      facadeSpandrelPct: parseNumber(row[93]),
+      facadeSolidPct: parseNumber(row[94]),
     },
-    // S10 – Lifts & Height (shifted +2)
+    // S10 – Lifts & Height (95-101)
     liftsHeight: {
-      passengerCount: parseNumber(row[89]),
-      passengerCapacity: parseNumber(row[90]),
-      serviceCount: parseNumber(row[91]),
-      serviceCapacity: parseNumber(row[92]),
-      totalLifts: parseNumber(row[93]),
-      heightFt: parseNumber(row[94]),
-      buildingConfiguration: row[95] || "",
+      passengerCount: parseNumber(row[95]),
+      passengerCapacity: parseNumber(row[96]),
+      serviceCount: parseNumber(row[97]),
+      serviceCapacity: parseNumber(row[98]),
+      totalLifts: parseNumber(row[99]),
+      heightFt: parseNumber(row[100]),
+      buildingConfiguration: row[101] || "",
     },
-    // S11 – BUA (shifted +2)
+    // S11 – BUA (102-103)
     bua: {
-      buaFt2: parseNumber(row[96]),
-      gfaOverBua: parseNumber(row[97]),
+      buaFt2: parseNumber(row[102]),
+      gfaOverBua: parseNumber(row[103]),
     },
   }
 }
@@ -259,8 +273,12 @@ export async function GET(request: Request) {
       })
     }
 
-    // Skip header row, filter valid rows (must have Plot_No)
-    const dataRows = rows.slice(1).filter((row) => row[0] && row[0].trim() !== "")
+    // Skip header row, filter valid rows (must have Plot_No OR Marketing_Name)
+    const dataRows = rows.slice(1).filter((row) => {
+      const hasPlotNo = row[0] && row[0].trim() !== ""
+      const hasMarketingName = row[1] && row[1].trim() !== ""
+      return hasPlotNo || hasMarketingName
+    })
 
     // Parse all buildings
     const buildings: BuildingInfo[] = dataRows.map(parseBuilding)
