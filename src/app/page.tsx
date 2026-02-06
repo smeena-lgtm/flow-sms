@@ -4,35 +4,16 @@ import { useState, useEffect } from "react"
 import {
   FolderKanban,
   Users,
-  CheckCircle2,
-  MapPin,
-  ArrowUpRight,
+  TrendingUp,
   Building2,
+  ArrowUpRight,
   ListTodo,
+  Ruler,
+  Car,
 } from "lucide-react"
 import Link from "next/link"
 import { DonutChart } from "@/components/charts/donut-chart"
-
-interface PXTStats {
-  total: number
-  pit: number
-  pot: number
-  pht: number
-  byLocation: {
-    miami: number
-    riyadh: number
-  }
-  totalUnits: number
-  totalGFA: number
-}
-
-interface PXTProject {
-  srNo: string
-  projectName: string
-  location: string
-  status: "PIT" | "POT" | "PHT"
-  unitMix: { total: number }
-}
+import type { BuildingInfo, BuildingInfoStats } from "@/types/building"
 
 interface HRStats {
   totalEmployees: number
@@ -48,14 +29,14 @@ interface TaskStats {
 }
 
 interface DashboardData {
-  pxt: { stats: PXTStats; projects: PXTProject[] } | null
+  buildings: { stats: BuildingInfoStats; buildings: BuildingInfo[] } | null
   hr: { stats: HRStats } | null
   tasks: TaskStats | null
 }
 
 export default function AnalyticsPage() {
   const [data, setData] = useState<DashboardData>({
-    pxt: null,
+    buildings: null,
     hr: null,
     tasks: null,
   })
@@ -67,7 +48,7 @@ export default function AnalyticsPage() {
         setLoading(true)
 
         // Fetch all APIs in parallel
-        const [pxtRes, hrRes, tasksRes] = await Promise.all([
+        const [buildingsRes, hrRes, tasksRes] = await Promise.all([
           fetch("/api/pxt").then((r) => (r.ok ? r.json() : null)),
           fetch("/api/hr").then((r) => (r.ok ? r.json() : null)),
           fetch("/api/tasks").then((r) => (r.ok ? r.json() : null)),
@@ -85,7 +66,7 @@ export default function AnalyticsPage() {
         }
 
         setData({
-          pxt: pxtRes,
+          buildings: buildingsRes,
           hr: hrRes,
           tasks: taskStats,
         })
@@ -98,26 +79,46 @@ export default function AnalyticsPage() {
     fetchAllData()
   }, [])
 
-  const pxtStats = data.pxt?.stats
+  const buildingStats = data.buildings?.stats
   const hrStats = data.hr?.stats
   const taskStats = data.tasks
-  const recentProjects = data.pxt?.projects?.slice(0, 5) || []
+  const recentBuildings = data.buildings?.buildings?.slice(0, 5) || []
 
-  // Chart data from real stats
-  const projectStatusData = pxtStats
-    ? [
-        { label: "PIT", value: pxtStats.pit, color: "var(--accent-yellow)" },
-        { label: "POT", value: pxtStats.pot, color: "var(--accent-green)" },
-        { label: "PHT", value: pxtStats.pht, color: "var(--accent-purple)" },
-      ]
+  // Chart data - Design Manager breakdown
+  const dmData = buildingStats?.byDesignManager
+    ? Object.entries(buildingStats.byDesignManager).map(([dm, count], index) => ({
+        label: dm || "Unknown",
+        value: count,
+        color: ["var(--accent-blue)", "var(--accent-green)", "var(--accent-purple)", "var(--accent-cyan)", "var(--accent-yellow)"][index % 5],
+      }))
     : []
 
-  const locationData = pxtStats
+  // Efficiency distribution
+  const efficiencyData = recentBuildings.length > 0
     ? [
-        { label: "Miami", value: pxtStats.byLocation.miami, color: "var(--accent-cyan)" },
-        { label: "Riyadh", value: pxtStats.byLocation.riyadh, color: "var(--accent-yellow)" },
-      ]
+        {
+          label: "High (≥90%)",
+          value: recentBuildings.filter((b) => b.totalSellable.efficiencySaGfa >= 0.9).length,
+          color: "var(--accent-green)",
+        },
+        {
+          label: "Good (85-90%)",
+          value: recentBuildings.filter((b) => b.totalSellable.efficiencySaGfa >= 0.85 && b.totalSellable.efficiencySaGfa < 0.9).length,
+          color: "var(--accent-yellow)",
+        },
+        {
+          label: "Below 85%",
+          value: recentBuildings.filter((b) => b.totalSellable.efficiencySaGfa < 0.85).length,
+          color: "var(--accent-red)",
+        },
+      ].filter((d) => d.value > 0)
     : []
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+    if (num >= 1000) return `${(num / 1000).toFixed(0)}K`
+    return num.toLocaleString()
+  }
 
   if (loading) {
     return (
@@ -142,15 +143,15 @@ export default function AnalyticsPage() {
       {/* Stats Grid - Row 1 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Total Projects"
-          value={pxtStats?.total || 0}
+          title="Total Buildings"
+          value={buildingStats?.totalBuildings || 0}
           icon={FolderKanban}
           color="text-accent-blue"
           bgColor="bg-accent-blue/10"
         />
         <StatCard
           title="Total Units"
-          value={pxtStats?.totalUnits?.toLocaleString() || "0"}
+          value={formatNumber(buildingStats?.totalUnits || 0)}
           icon={Building2}
           color="text-accent-purple"
           bgColor="bg-accent-purple/10"
@@ -173,39 +174,81 @@ export default function AnalyticsPage() {
         />
       </div>
 
+      {/* Building KPIs Row */}
+      {buildingStats && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="rounded-xl bg-bg-card border border-border-color p-4">
+            <div className="flex items-center gap-2 text-text-muted mb-2">
+              <Ruler className="h-4 w-4" />
+              <span className="text-xs">Total GFA</span>
+            </div>
+            <p className="text-2xl font-bold text-text-primary">
+              {formatNumber(buildingStats.totalGfaFt2)} ft²
+            </p>
+          </div>
+          <div className="rounded-xl bg-bg-card border border-border-color p-4">
+            <div className="flex items-center gap-2 text-text-muted mb-2">
+              <TrendingUp className="h-4 w-4" />
+              <span className="text-xs">Avg Efficiency</span>
+            </div>
+            <p className="text-2xl font-bold text-accent-green">
+              {(buildingStats.avgEfficiency * 100).toFixed(1)}%
+            </p>
+          </div>
+          <div className="rounded-xl bg-bg-card border border-border-color p-4">
+            <div className="flex items-center gap-2 text-text-muted mb-2">
+              <Building2 className="h-4 w-4" />
+              <span className="text-xs">Avg FAR</span>
+            </div>
+            <p className="text-2xl font-bold text-text-primary">
+              {buildingStats.avgFar.toFixed(2)}
+            </p>
+          </div>
+          <div className="rounded-xl bg-bg-card border border-border-color p-4">
+            <div className="flex items-center gap-2 text-text-muted mb-2">
+              <Car className="h-4 w-4" />
+              <span className="text-xs">Total Parking</span>
+            </div>
+            <p className="text-2xl font-bold text-text-primary">
+              {formatNumber(buildingStats.totalParking)}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Project Status Donut */}
+        {/* By Design Manager */}
         <div className="rounded-2xl bg-bg-card border border-border-color p-6">
           <h3 className="text-lg font-semibold text-text-primary mb-6">
-            Projects by Status
+            By Design Manager
           </h3>
-          {projectStatusData.length > 0 ? (
+          {dmData.length > 0 ? (
             <DonutChart
-              data={projectStatusData}
+              data={dmData}
               size={140}
               strokeWidth={14}
-              title="Projects"
+              title="Buildings"
             />
           ) : (
-            <div className="text-center py-8 text-text-muted">No project data</div>
+            <div className="text-center py-8 text-text-muted">No data</div>
           )}
         </div>
 
-        {/* Location Breakdown */}
+        {/* Efficiency Distribution */}
         <div className="rounded-2xl bg-bg-card border border-border-color p-6">
           <h3 className="text-lg font-semibold text-text-primary mb-6">
-            Projects by Location
+            Efficiency Distribution
           </h3>
-          {locationData.length > 0 ? (
+          {efficiencyData.length > 0 ? (
             <DonutChart
-              data={locationData}
+              data={efficiencyData}
               size={140}
               strokeWidth={14}
-              title="Projects"
+              title="Buildings"
             />
           ) : (
-            <div className="text-center py-8 text-text-muted">No location data</div>
+            <div className="text-center py-8 text-text-muted">No data</div>
           )}
         </div>
       </div>
@@ -240,10 +283,10 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* Recent Projects Table */}
+      {/* Recent Buildings Table */}
       <div className="rounded-2xl bg-bg-card border border-border-color overflow-hidden">
         <div className="p-6 flex items-center justify-between border-b border-border-color">
-          <h3 className="text-lg font-semibold text-text-primary">Recent Projects</h3>
+          <h3 className="text-lg font-semibold text-text-primary">Recent Buildings</h3>
           <Link
             href="/projects"
             className="flex items-center gap-1 text-sm text-accent-blue hover:text-accent-blue/80 transition-colors"
@@ -257,72 +300,66 @@ export default function AnalyticsPage() {
             <thead>
               <tr className="bg-bg-surface">
                 <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
-                  Project
+                  Building
                 </th>
                 <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
-                  Location
-                </th>
-                <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
-                  Status
+                  DM
                 </th>
                 <th className="text-right text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
                   Units
                 </th>
+                <th className="text-right text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                  Efficiency
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-color">
-              {recentProjects.length > 0 ? (
-                recentProjects.map((project, index) => (
+              {recentBuildings.length > 0 ? (
+                recentBuildings.map((building, index) => (
                   <tr
-                    key={project.srNo || index}
+                    key={building.identity.plotNo || index}
                     className="hover:bg-bg-card-hover transition-colors"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold ${
-                            project.location === "MIA"
-                              ? "bg-gradient-to-br from-accent-cyan to-accent-blue"
-                              : "bg-gradient-to-br from-accent-yellow to-accent-red"
-                          }`}
-                        >
-                          {project.projectName.charAt(0).toUpperCase()}
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold bg-gradient-to-br from-ocean-swell to-accent-blue">
+                          {building.identity.numberOfBuildings || 1}
                         </div>
-                        <span className="text-sm font-medium text-text-primary">
-                          {project.projectName}
-                        </span>
+                        <div>
+                          <span className="text-sm font-medium text-text-primary">
+                            {building.identity.marketingName || building.identity.plotNo}
+                          </span>
+                          <p className="text-xs text-text-muted">{building.identity.plotNo}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-text-muted" />
-                        <span className="text-sm text-text-secondary">
-                          {project.location === "MIA" ? "Miami" : "Riyadh"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                          project.status === "PIT"
-                            ? "bg-accent-yellow/15 text-accent-yellow"
-                            : project.status === "POT"
-                            ? "bg-accent-green/15 text-accent-green"
-                            : "bg-accent-purple/15 text-accent-purple"
-                        }`}
-                      >
-                        {project.status}
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-accent-purple/15 text-accent-purple">
+                        {building.identity.designManager || "-"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right text-sm font-medium text-text-primary">
-                      {project.unitMix.total.toLocaleString()}
+                      {building.unitCounts.total.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          building.totalSellable.efficiencySaGfa >= 0.9
+                            ? "bg-accent-green/15 text-accent-green"
+                            : building.totalSellable.efficiencySaGfa >= 0.85
+                            ? "bg-accent-yellow/15 text-accent-yellow"
+                            : "bg-accent-red/15 text-accent-red"
+                        }`}
+                      >
+                        {(building.totalSellable.efficiencySaGfa * 100).toFixed(1)}%
+                      </span>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-text-muted">
-                    No projects found
+                    No buildings found
                   </td>
                 </tr>
               )}
@@ -344,7 +381,7 @@ function StatCard({
 }: {
   title: string
   value: string | number
-  icon: any
+  icon: React.ElementType
   subtitle?: string
   color: string
   bgColor: string
