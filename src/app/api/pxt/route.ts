@@ -1,48 +1,13 @@
 import { NextResponse } from "next/server"
+import type {
+  BuildingInfo,
+  BuildingInfoStats,
+  BuildingInfoResponse,
+} from "@/types/building"
 
-const SHEET_ID = "1AKxB64tY68H7RvzzzKWOjsZlKrQB7GI91PA9JacfUlQ"
-const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=MASTER`
-
-interface PXTProject {
-  srNo: string
-  plotName: string
-  projectName: string
-  plotArea: string
-  location: string
-  status: "PIT" | "POT" | "PHT"
-  unitMix: {
-    studio: number
-    oneBR: number
-    twoBR: number
-    threeBR: number
-    fourBR: number
-    liner: number
-    total: number
-  }
-  gfa: {
-    residential: number
-    commercial: number
-    total: number
-  }
-  sellableArea: {
-    residential: number
-    commercial: number
-    total: number
-  }
-}
-
-interface PXTStats {
-  total: number
-  pit: number
-  pot: number
-  pht: number
-  byLocation: {
-    miami: number
-    riyadh: number
-  }
-  totalUnits: number
-  totalGFA: number
-}
+// New Building Info Summary Sheet
+const SHEET_ID = "1PHEw9O7_225mtkKZtgBvweHaqy2SGzv-Cb_SZHZv1Jc"
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`
 
 function parseCSV(csv: string): string[][] {
   const lines = csv.split("\n")
@@ -68,9 +33,190 @@ function parseCSV(csv: string): string[][] {
 }
 
 function parseNumber(value: string): number {
-  const cleaned = value.replace(/[",]/g, "")
+  if (!value || value === "" || value === "-") return 0
+  const cleaned = value.replace(/[",\s]/g, "")
   const num = parseFloat(cleaned)
   return isNaN(num) ? 0 : num
+}
+
+function parseNullableNumber(value: string): number | null {
+  if (!value || value === "" || value === "-") return null
+  const num = parseNumber(value)
+  return num === 0 ? null : num
+}
+
+function parseBuilding(row: string[]): BuildingInfo {
+  // Column indices based on schema (0-indexed, schema is 1-indexed)
+  return {
+    // S1 – Project Identity (cols 1-6 → indices 0-5)
+    identity: {
+      plotNo: row[0] || "",
+      marketingName: row[1] || "",
+      designManager: row[2] || "",
+      numberOfBuildings: parseNumber(row[3]),
+      plotAreaFt2: parseNumber(row[4]),
+      far: parseNumber(row[5]),
+    },
+    // S2 – Gross Floor Area (cols 7-11 → indices 6-10)
+    gfa: {
+      resProposedGfaFt2: parseNumber(row[6]),
+      resProposedGfaPct: parseNumber(row[7]),
+      comProposedGfaFt2: parseNumber(row[8]),
+      comProposedGfaPct: parseNumber(row[9]),
+      totalProposedGfaFt2: parseNumber(row[10]),
+    },
+    // S3 – Residential Sellable (cols 12-20 → indices 11-19)
+    residentialSellable: {
+      suiteSelableFt2: parseNumber(row[11]),
+      suiteSellableRatio: parseNumber(row[12]),
+      balconySaFt2: parseNumber(row[13]),
+      leasableFt2: parseNullableNumber(row[14]),
+      balconyRatio: parseNumber(row[15]),
+      totalSellableFt2: parseNumber(row[16]),
+      nonSellableFt2: parseNumber(row[17]),
+      nonSellableRatio: parseNumber(row[18]),
+      efficiencySaGfa: parseNumber(row[19]),
+    },
+    // S4 – Commercial Sellable (cols 21-29 → indices 20-28)
+    commercialSellable: {
+      suiteSellableFt2: parseNumber(row[20]),
+      suiteSellableRatio: parseNumber(row[21]),
+      balconySaFt2: parseNumber(row[22]),
+      leasableFt2: parseNullableNumber(row[23]),
+      balconyRatio: parseNumber(row[24]),
+      totalSellableFt2: parseNumber(row[25]),
+      nonSellableFt2: parseNumber(row[26]),
+      nonSellableRatio: parseNumber(row[27]),
+      efficiencySaGfa: parseNumber(row[28]),
+    },
+    // S5 – Total Sellable (cols 30-37 → indices 29-36)
+    totalSellable: {
+      suiteSellableFt2: parseNumber(row[29]),
+      suiteSellableRatio: parseNumber(row[30]),
+      balconySaFt2: parseNumber(row[31]),
+      balconyRatio: parseNumber(row[32]),
+      totalSellableFt2: parseNumber(row[33]),
+      nonSellableFt2: parseNumber(row[34]),
+      nonSellableRatio: parseNumber(row[35]),
+      efficiencySaGfa: parseNumber(row[36]),
+    },
+    // S6 – AMI (cols 38-39 → indices 37-38)
+    ami: {
+      areaFt2: parseNumber(row[37]),
+      pct: parseNumber(row[38]),
+    },
+    // S6 – Unit Counts (cols 40-46 → indices 39-45)
+    unitCounts: {
+      studio: parseNumber(row[39]),
+      oneBed: parseNumber(row[40]),
+      twoBed: parseNumber(row[41]),
+      threeBed: parseNumber(row[42]),
+      fourBed: parseNumber(row[43]),
+      liner: parseNumber(row[44]),
+      total: parseNumber(row[45]),
+    },
+    // S6 – Unit Mix % (cols 47-52 → indices 46-51)
+    unitMixPct: {
+      studio: parseNumber(row[46]),
+      oneBed: parseNumber(row[47]),
+      twoBed: parseNumber(row[48]),
+      threeBed: parseNumber(row[49]),
+      fourBed: parseNumber(row[50]),
+      liner: parseNumber(row[51]),
+    },
+    // S6 – Balcony % (cols 53-58 → indices 52-57)
+    balconyPct: {
+      studio: parseNumber(row[52]),
+      oneBed: parseNumber(row[53]),
+      twoBed: parseNumber(row[54]),
+      threeBed: parseNumber(row[55]),
+      fourBed: parseNumber(row[56]),
+      liner: parseNumber(row[57]),
+    },
+    // S6 – Rental/Condo Split (cols 59-70 → indices 58-69)
+    rentalCondoSplit: {
+      studio: { rental: parseNumber(row[58]), condo: parseNumber(row[59]) },
+      oneBed: { rental: parseNumber(row[60]), condo: parseNumber(row[61]) },
+      twoBed: { rental: parseNumber(row[62]), condo: parseNumber(row[63]) },
+      threeBed: { rental: parseNumber(row[64]), condo: parseNumber(row[65]) },
+      fourBed: { rental: parseNumber(row[66]), condo: parseNumber(row[67]) },
+      liner: { rental: parseNumber(row[68]), condo: parseNumber(row[69]) },
+    },
+    // S7 – Retail & Grid (cols 71-74 → indices 70-73)
+    retailGrid: {
+      gridFt: parseNumber(row[70]),
+      retailSmallQty: parseNumber(row[71]),
+      retailCornerQty: parseNumber(row[72]),
+      retailRegularQty: parseNumber(row[73]),
+    },
+    // S8 – MEP Systems (cols 75-79 → indices 74-78)
+    mep: {
+      electricalLoadKw: parseNumber(row[74]),
+      coolingLoadTr: parseNumber(row[75]),
+      waterDemandFt3Day: parseNumber(row[76]),
+      sewerageDemandFt3Day: parseNumber(row[77]),
+      gasDemandFt3Hr: parseNumber(row[78]),
+    },
+    // S9 – Parking & Facade (cols 80-87 → indices 79-86)
+    parkingFacade: {
+      parkingRequired: parseNumber(row[79]),
+      parkingProposed: parseNumber(row[80]),
+      parkingEfficiencyFt2Car: parseNumber(row[81]),
+      additionalParking: parseNumber(row[82]),
+      evParkingLots: parseNumber(row[83]),
+      facadeGlazingPct: parseNumber(row[84]),
+      facadeSpandrelPct: parseNumber(row[85]),
+      facadeSolidPct: parseNumber(row[86]),
+    },
+    // S10 – Lifts & Height (cols 88-94 → indices 87-93)
+    liftsHeight: {
+      passengerCount: parseNumber(row[87]),
+      passengerCapacity: parseNumber(row[88]),
+      serviceCount: parseNumber(row[89]),
+      serviceCapacity: parseNumber(row[90]),
+      totalLifts: parseNumber(row[91]),
+      heightFt: parseNumber(row[92]),
+      buildingConfiguration: row[93] || "",
+    },
+    // S11 – BUA (cols 95-96 → indices 94-95)
+    bua: {
+      buaFt2: parseNumber(row[94]),
+      gfaOverBua: parseNumber(row[95]),
+    },
+  }
+}
+
+function calculateStats(buildings: BuildingInfo[]): BuildingInfoStats {
+  const byDesignManager: Record<string, number> = {}
+
+  buildings.forEach((b) => {
+    const dm = b.identity.designManager || "Unknown"
+    byDesignManager[dm] = (byDesignManager[dm] || 0) + 1
+  })
+
+  const totalEfficiency = buildings.reduce(
+    (sum, b) => sum + b.totalSellable.efficiencySaGfa,
+    0
+  )
+  const totalFar = buildings.reduce((sum, b) => sum + b.identity.far, 0)
+
+  return {
+    totalBuildings: buildings.length,
+    totalUnits: buildings.reduce((sum, b) => sum + b.unitCounts.total, 0),
+    totalGfaFt2: buildings.reduce((sum, b) => sum + b.gfa.totalProposedGfaFt2, 0),
+    totalSellableFt2: buildings.reduce(
+      (sum, b) => sum + b.totalSellable.totalSellableFt2,
+      0
+    ),
+    avgEfficiency:
+      buildings.length > 0 ? totalEfficiency / buildings.length : 0,
+    avgFar: buildings.length > 0 ? totalFar / buildings.length : 0,
+    totalParking: buildings.reduce(
+      (sum, b) => sum + b.parkingFacade.parkingProposed,
+      0
+    ),
+    byDesignManager,
+  }
 }
 
 export async function GET(request: Request) {
@@ -96,88 +242,63 @@ export async function GET(request: Request) {
         headers: headerRow.map((h, i) => `[${i}] ${h}`),
         firstRow: firstDataRow.map((v, i) => `[${i}] ${v}`),
         totalRows: rows.length - 1,
+        totalCols: headerRow.length,
       })
     }
 
-    // Filter params
-    const statusFilter = searchParams.get("status")?.toUpperCase() // PIT, POT, PHT
-    const locationFilter = searchParams.get("location")?.toUpperCase() // MIA, RYD
+    // Skip header row, filter valid rows (must have Plot_No)
+    const dataRows = rows.slice(1).filter((row) => row[0] && row[0].trim() !== "")
 
-    // Skip header row
-    const dataRows = rows.slice(1).filter((row) => row[0] && row[2]) // Must have Sr. No. and Project Name
-
-    // Column mapping based on actual Google Sheet structure
-    const projects: PXTProject[] = dataRows.map((row) => ({
-      srNo: row[0] || "",
-      plotName: row[1] || "",
-      projectName: row[2] || "",
-      plotArea: row[3] || "",
-      location: row[5] || "",  // Column F: Location (MIA or RYD)
-      status: (row[6] || "PIT") as "PIT" | "POT" | "PHT",  // Column G: Status (PIT, POT, PHT)
-      unitMix: {
-        studio: parseNumber(row[7] || "0"),   // [7] ST (Studio)
-        oneBR: parseNumber(row[8] || "0"),    // [8] 1 BR
-        twoBR: parseNumber(row[9] || "0"),    // [9] 2 BR
-        threeBR: parseNumber(row[10] || "0"), // [10] 3 BR
-        fourBR: parseNumber(row[11] || "0"),  // [11] 4 BR
-        liner: parseNumber(row[12] || "0"),   // [12] LINER
-        total: parseNumber(row[13] || "0"),   // [13] Total Unit mix
-      },
-      gfa: {
-        residential: parseNumber(row[14] || "0"),  // [14] GFA RESI
-        commercial: parseNumber(row[15] || "0"),   // [15] GFA COMM
-        total: parseNumber(row[16] || "0"),        // [16] GFA TOTAL
-      },
-      sellableArea: {
-        residential: parseNumber(row[17] || "0"),  // [17] SA RESI
-        commercial: parseNumber(row[18] || "0"),   // [18] SA COMM
-        total: parseNumber(row[19] || "0"),        // [19] SA TOTAL
-      },
-    }))
+    // Parse all buildings
+    const buildings: BuildingInfo[] = dataRows.map(parseBuilding)
 
     // Apply filters
-    let filteredProjects = projects
+    const dmFilter = searchParams.get("dm")?.toUpperCase()
+    const configFilter = searchParams.get("config")
 
-    if (statusFilter && ["PIT", "POT", "PHT"].includes(statusFilter)) {
-      filteredProjects = filteredProjects.filter((p) => p.status === statusFilter)
+    let filteredBuildings = buildings
+
+    if (dmFilter) {
+      filteredBuildings = filteredBuildings.filter(
+        (b) => b.identity.designManager.toUpperCase() === dmFilter
+      )
     }
 
-    if (locationFilter && ["MIA", "RYD"].includes(locationFilter)) {
-      filteredProjects = filteredProjects.filter((p) => p.location === locationFilter)
+    if (configFilter) {
+      filteredBuildings = filteredBuildings.filter((b) =>
+        b.liftsHeight.buildingConfiguration
+          .toLowerCase()
+          .includes(configFilter.toLowerCase())
+      )
     }
 
     // Calculate stats
-    const stats: PXTStats = {
-      total: projects.length,
-      pit: projects.filter((p) => p.status === "PIT").length,
-      pot: projects.filter((p) => p.status === "POT").length,
-      pht: projects.filter((p) => p.status === "PHT").length,
-      byLocation: {
-        miami: projects.filter((p) => p.location === "MIA").length,
-        riyadh: projects.filter((p) => p.location === "RYD").length,
-      },
-      totalUnits: projects.reduce((sum, p) => sum + p.unitMix.total, 0),
-      totalGFA: projects.reduce((sum, p) => sum + p.gfa.total, 0),
-    }
+    const stats = calculateStats(buildings) // Stats always from full dataset
 
-    // Group by status
-    const grouped = {
-      pit: projects.filter((p) => p.status === "PIT"),
-      pot: projects.filter((p) => p.status === "POT"),
-      pht: projects.filter((p) => p.status === "PHT"),
-    }
-
-    return NextResponse.json({
-      projects: filteredProjects,
-      grouped,
+    const result: BuildingInfoResponse = {
+      buildings: filteredBuildings,
       stats,
       lastUpdated: new Date().toISOString(),
-    })
+    }
+
+    return NextResponse.json(result)
   } catch (error) {
-    console.error("PXT API Error:", error)
+    console.error("Building Info API Error:", error)
     return NextResponse.json(
-      { error: "Failed to fetch PXT data" },
+      { error: "Failed to fetch building data" },
       { status: 500 }
     )
   }
+}
+
+// CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  })
 }
