@@ -6,6 +6,8 @@ export interface ProjectIdentity {
   plotNo: string              // Primary key - AV.BD.A.###
   marketingName: string       // Display name - AV-###
   designManager: string       // 2-letter initials
+  location: "MIA" | "RYD" | string  // MIA = Miami, RYD = Riyadh
+  status: "PIT" | "POT" | "PHT" | string  // Project status
   numberOfBuildings: number   // Tower count (1-6)
   plotAreaFt2: number         // Land parcel area
   far: number                 // Floor Area Ratio
@@ -187,6 +189,15 @@ export interface BuildingInfoStats {
   avgFar: number
   totalParking: number
   byDesignManager: Record<string, number>
+  byLocation: {
+    miami: number
+    riyadh: number
+  }
+  byStatus: {
+    pit: number
+    pot: number
+    pht: number
+  }
 }
 
 export interface BuildingInfoResponse {

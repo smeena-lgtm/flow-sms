@@ -114,6 +114,43 @@ export default function AnalyticsPage() {
       ].filter((d) => d.value > 0)
     : []
 
+  // Location breakdown (MIA vs RYD)
+  const locationData = buildingStats?.byLocation
+    ? [
+        {
+          label: "Miami",
+          value: buildingStats.byLocation.miami || 0,
+          color: "var(--accent-cyan)",
+        },
+        {
+          label: "Riyadh",
+          value: buildingStats.byLocation.riyadh || 0,
+          color: "var(--accent-yellow)",
+        },
+      ].filter((d) => d.value > 0)
+    : []
+
+  // Status breakdown (PIT/POT/PHT)
+  const statusData = buildingStats?.byStatus
+    ? [
+        {
+          label: "PIT - Initiation",
+          value: buildingStats.byStatus.pit || 0,
+          color: "var(--accent-yellow)",
+        },
+        {
+          label: "POT - Onboard",
+          value: buildingStats.byStatus.pot || 0,
+          color: "var(--accent-green)",
+        },
+        {
+          label: "PHT - Handover",
+          value: buildingStats.byStatus.pht || 0,
+          color: "var(--accent-purple)",
+        },
+      ].filter((d) => d.value > 0)
+    : []
+
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
     if (num >= 1000) return `${(num / 1000).toFixed(0)}K`
@@ -216,39 +253,73 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Charts Row - 2x2 Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* By Location */}
+        <div className="rounded-2xl bg-bg-card border border-border-color p-5">
+          <h3 className="text-sm font-semibold text-text-primary mb-4">
+            By Location
+          </h3>
+          {locationData.length > 0 ? (
+            <DonutChart
+              data={locationData}
+              size={100}
+              strokeWidth={12}
+              title="Projects"
+            />
+          ) : (
+            <div className="text-center py-6 text-text-muted text-sm">No data</div>
+          )}
+        </div>
+
+        {/* By Status */}
+        <div className="rounded-2xl bg-bg-card border border-border-color p-5">
+          <h3 className="text-sm font-semibold text-text-primary mb-4">
+            By Status
+          </h3>
+          {statusData.length > 0 ? (
+            <DonutChart
+              data={statusData}
+              size={100}
+              strokeWidth={12}
+              title="Projects"
+            />
+          ) : (
+            <div className="text-center py-6 text-text-muted text-sm">No data</div>
+          )}
+        </div>
+
         {/* By Design Manager */}
-        <div className="rounded-2xl bg-bg-card border border-border-color p-6">
-          <h3 className="text-lg font-semibold text-text-primary mb-6">
+        <div className="rounded-2xl bg-bg-card border border-border-color p-5">
+          <h3 className="text-sm font-semibold text-text-primary mb-4">
             By Design Manager
           </h3>
           {dmData.length > 0 ? (
             <DonutChart
               data={dmData}
-              size={140}
-              strokeWidth={14}
+              size={100}
+              strokeWidth={12}
               title="Buildings"
             />
           ) : (
-            <div className="text-center py-8 text-text-muted">No data</div>
+            <div className="text-center py-6 text-text-muted text-sm">No data</div>
           )}
         </div>
 
         {/* Efficiency Distribution */}
-        <div className="rounded-2xl bg-bg-card border border-border-color p-6">
-          <h3 className="text-lg font-semibold text-text-primary mb-6">
+        <div className="rounded-2xl bg-bg-card border border-border-color p-5">
+          <h3 className="text-sm font-semibold text-text-primary mb-4">
             Efficiency Distribution
           </h3>
           {efficiencyData.length > 0 ? (
             <DonutChart
               data={efficiencyData}
-              size={140}
-              strokeWidth={14}
+              size={100}
+              strokeWidth={12}
               title="Buildings"
             />
           ) : (
-            <div className="text-center py-8 text-text-muted">No data</div>
+            <div className="text-center py-6 text-text-muted text-sm">No data</div>
           )}
         </div>
       </div>
@@ -303,7 +374,10 @@ export default function AnalyticsPage() {
                   Building
                 </th>
                 <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
-                  DM
+                  Location
+                </th>
+                <th className="text-left text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
+                  Status
                 </th>
                 <th className="text-right text-xs font-medium text-text-muted uppercase tracking-wider px-6 py-3">
                   Units
@@ -322,7 +396,11 @@ export default function AnalyticsPage() {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold bg-gradient-to-br from-ocean-swell to-accent-blue">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold ${
+                          building.identity.location === "MIA"
+                            ? "bg-gradient-to-br from-accent-cyan to-accent-blue"
+                            : "bg-gradient-to-br from-accent-yellow to-accent-red"
+                        }`}>
                           {building.identity.numberOfBuildings || 1}
                         </div>
                         <div>
@@ -334,8 +412,21 @@ export default function AnalyticsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-accent-purple/15 text-accent-purple">
-                        {building.identity.designManager || "-"}
+                      <span className="text-sm text-text-secondary">
+                        {building.identity.location === "MIA" ? "Miami" : building.identity.location === "RYD" ? "Riyadh" : building.identity.location || "-"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                          building.identity.status === "PIT"
+                            ? "bg-accent-yellow/15 text-accent-yellow"
+                            : building.identity.status === "POT"
+                            ? "bg-accent-green/15 text-accent-green"
+                            : "bg-accent-purple/15 text-accent-purple"
+                        }`}
+                      >
+                        {building.identity.status || "-"}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right text-sm font-medium text-text-primary">
@@ -358,7 +449,7 @@ export default function AnalyticsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-text-muted">
+                  <td colSpan={5} className="px-6 py-8 text-center text-text-muted">
                     No buildings found
                   </td>
                 </tr>
