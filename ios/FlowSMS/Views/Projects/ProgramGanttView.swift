@@ -62,9 +62,9 @@ enum ProgramStageStatus: String, CaseIterable {
     var color: Color {
         switch self {
         case .completed: return Color(red: 0.2, green: 0.8, blue: 0.3)
-        case .in_progress: return FlowColors.oceanSwell
-        case .upcoming: return FlowColors.textSecondary
-        case .on_hold: return FlowColors.sunlight
+        case .in_progress: return Color.oceanSwell
+        case .upcoming: return Color.textSecondary
+        case .on_hold: return Color.sunlight
         case .cancelled: return Color(red: 0.9, green: 0.3, blue: 0.3)
         }
     }
@@ -219,13 +219,13 @@ struct ProgramGanttView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 32))
-                        .foregroundColor(FlowColors.heart)
+                        .foregroundColor(Color.heart)
                     Text("Error Loading Program")
                         .font(.headline)
-                        .foregroundColor(FlowColors.textPrimary)
+                        .foregroundColor(Color.textPrimary)
                     Text(errorMessage)
                         .font(.caption)
-                        .foregroundColor(FlowColors.textSecondary)
+                        .foregroundColor(Color.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxHeight: .infinity)
@@ -240,20 +240,20 @@ struct ProgramGanttView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "chart.bar.xaxis")
                         .font(.system(size: 32))
-                        .foregroundColor(FlowColors.textSecondary)
+                        .foregroundColor(Color.textSecondary)
                     Text("No Program Data")
                         .font(.headline)
-                        .foregroundColor(FlowColors.textPrimary)
+                        .foregroundColor(Color.textPrimary)
                     Text("No stages found for this project")
                         .font(.caption)
-                        .foregroundColor(FlowColors.textSecondary)
+                        .foregroundColor(Color.textSecondary)
                 }
                 .frame(maxHeight: .infinity)
                 .padding(16)
             }
         }
         .padding(.vertical, 16)
-        .background(FlowColors.bgDark)
+        .background(Color.bgDark)
         .task {
             await viewModel.fetchProgram()
         }
@@ -272,11 +272,11 @@ private struct HeaderView: View {
             HStack(spacing: 8) {
                 Image(systemName: "chart.gantt.circle.fill")
                     .font(.system(size: 18))
-                    .foregroundColor(FlowColors.oceanSwell)
+                    .foregroundColor(Color.oceanSwell)
 
                 Text("Project Program")
                     .font(.headline)
-                    .foregroundColor(FlowColors.textPrimary)
+                    .foregroundColor(Color.textPrimary)
 
                 Spacer()
 
@@ -284,15 +284,15 @@ private struct HeaderView: View {
                     .font(.caption)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(FlowColors.bgCard)
-                    .foregroundColor(FlowColors.textSecondary)
+                    .background(Color.bgCard)
+                    .foregroundColor(Color.textSecondary)
                     .cornerRadius(6)
             }
 
             HStack(spacing: 8) {
                 Text(projectName)
                     .font(.system(.body, design: .default))
-                    .foregroundColor(FlowColors.textPrimary)
+                    .foregroundColor(Color.textPrimary)
                     .lineLimit(1)
 
                 Spacer()
@@ -300,7 +300,7 @@ private struct HeaderView: View {
                 if let lastUpdated = lastUpdated {
                     Text("Updated: \(lastUpdated)")
                         .font(.caption2)
-                        .foregroundColor(FlowColors.textSecondary)
+                        .foregroundColor(Color.textSecondary)
                 }
             }
 
@@ -308,7 +308,7 @@ private struct HeaderView: View {
             LegendView()
         }
         .padding(16)
-        .background(FlowColors.bgCard)
+        .background(Color.bgCard)
         .cornerRadius(12)
         .padding(.horizontal, 16)
     }
@@ -321,7 +321,7 @@ private struct LegendView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Legend")
                 .font(.caption)
-                .foregroundColor(FlowColors.textSecondary)
+                .foregroundColor(Color.textSecondary)
                 .textCase(.uppercase)
 
             HStack(spacing: 16) {
@@ -334,7 +334,7 @@ private struct LegendView: View {
                                     .frame(width: 12, height: 12)
                                 Text(category.label)
                                     .font(.caption2)
-                                    .foregroundColor(FlowColors.textSecondary)
+                                    .foregroundColor(Color.textSecondary)
                             }
                         }
                     }
@@ -376,13 +376,13 @@ private struct TimelineGanttView: View {
                         HStack(spacing: 8) {
                             Text("Stage")
                                 .font(.caption)
-                                .foregroundColor(FlowColors.textSecondary)
+                                .foregroundColor(Color.textSecondary)
                             Spacer()
                         }
                         .frame(height: 50)
                         .padding(.horizontal, 12)
-                        .background(FlowColors.bgCard)
-                        .borderBottom(width: 1, color: FlowColors.borderColor)
+                        .background(Color.bgCard)
+                        .borderBottom(width: 1, color: Color.borderColor)
 
                         // Stages
                         ScrollView(.vertical, showsIndicators: false) {
@@ -399,34 +399,34 @@ private struct TimelineGanttView: View {
                                                 Text(stage.shortName ?? stage.name)
                                                     .font(.caption)
                                                     .fontWeight(.medium)
-                                                    .foregroundColor(FlowColors.textPrimary)
+                                                    .foregroundColor(Color.textPrimary)
                                                     .lineLimit(1)
 
                                                 Text(stage.lead)
                                                     .font(.caption2)
-                                                    .foregroundColor(FlowColors.textSecondary)
+                                                    .foregroundColor(Color.textSecondary)
                                                     .lineLimit(1)
                                             }
                                             Spacer()
                                         }
                                         .frame(height: 60)
                                         .padding(.horizontal, 12)
-                                        .background(index % 2 == 0 ? FlowColors.bgCard : FlowColors.bgSurface)
-                                        .borderBottom(width: 1, color: FlowColors.borderColor)
+                                        .background(index % 2 == 0 ? Color.bgCard : Color.bgSurface)
+                                        .borderBottom(width: 1, color: Color.borderColor)
                                     }
                                 }
                             }
                         }
                     }
                     .frame(width: 120)
-                    .background(FlowColors.bgCard)
+                    .background(Color.bgCard)
 
                     // Scrollable timeline area
                     ScrollView(.horizontal, showsIndicators: false) {
                         VStack(spacing: 0) {
                             // Timeline header with months
                             TimelineHeaderView(dateRange: dateRange)
-                                .borderBottom(width: 1, color: FlowColors.borderColor)
+                                .borderBottom(width: 1, color: Color.borderColor)
 
                             // Gantt bars
                             VStack(spacing: 0) {
@@ -436,21 +436,21 @@ private struct TimelineGanttView: View {
                                         dateRange: dateRange,
                                         isAlternate: index % 2 == 0
                                     )
-                                    .borderBottom(width: 1, color: FlowColors.borderColor)
+                                    .borderBottom(width: 1, color: Color.borderColor)
                                 }
                             }
                         }
                     }
                 }
                 .cornerRadius(12)
-                .overflow(.hidden)
+                .clipped()
             }
             .frame(height: 400)
             .padding(.horizontal, 16)
         } else {
             VStack {
                 Text("No date information available")
-                    .foregroundColor(FlowColors.textSecondary)
+                    .foregroundColor(Color.textSecondary)
             }
             .frame(maxHeight: .infinity)
         }
@@ -485,11 +485,11 @@ private struct TimelineHeaderView: View {
                     Text(month.label)
                         .font(.caption2)
                         .fontWeight(.semibold)
-                        .foregroundColor(FlowColors.textPrimary)
+                        .foregroundColor(Color.textPrimary)
                 }
                 .frame(width: 100, height: 50)
-                .background(FlowColors.bgSurface)
-                .borderRight(width: 1, color: FlowColors.borderColor)
+                .background(Color.bgSurface)
+                .borderRight(width: 1, color: Color.borderColor)
             }
 
             Spacer()
@@ -509,7 +509,7 @@ private struct GanttBarRowView: View {
         ZStack(alignment: .leading) {
             // Background
             Rectangle()
-                .fill(isAlternate ? FlowColors.bgCard : FlowColors.bgSurface)
+                .fill(isAlternate ? Color.bgCard : Color.bgSurface)
 
             // Today line
             TodayLineView(dateRange: dateRange)
@@ -603,7 +603,7 @@ private struct TodayLineView: View {
         if todayPosition >= 0 {
             VStack {
                 Rectangle()
-                    .fill(FlowColors.sunlight)
+                    .fill(Color.sunlight)
                     .frame(width: 2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -645,7 +645,7 @@ private struct StageDetailCard: View {
 
                     Text(stage.name)
                         .font(.headline)
-                        .foregroundColor(FlowColors.textPrimary)
+                        .foregroundColor(Color.textPrimary)
                 }
 
                 Spacer()
@@ -666,7 +666,7 @@ private struct StageDetailCard: View {
             }
 
             Divider()
-                .background(FlowColors.borderColor)
+                .background(Color.borderColor)
 
             // Dates
             VStack(alignment: .leading, spacing: 8) {
@@ -683,16 +683,16 @@ private struct StageDetailCard: View {
                 HStack(spacing: 8) {
                     Image(systemName: "person.circle.fill")
                         .font(.system(size: 14))
-                        .foregroundColor(FlowColors.oceanSwell)
+                        .foregroundColor(Color.oceanSwell)
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Lead")
                             .font(.caption)
-                            .foregroundColor(FlowColors.textSecondary)
+                            .foregroundColor(Color.textSecondary)
                         Text(stage.lead)
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(FlowColors.textPrimary)
+                            .foregroundColor(Color.textPrimary)
                     }
 
                     Spacer()
@@ -702,16 +702,16 @@ private struct StageDetailCard: View {
                     HStack(spacing: 8) {
                         Image(systemName: "person.2.circle.fill")
                             .font(.system(size: 14))
-                            .foregroundColor(FlowColors.oceanSwell.opacity(0.7))
+                            .foregroundColor(Color.oceanSwell.opacity(0.7))
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Assist")
                                 .font(.caption)
-                                .foregroundColor(FlowColors.textSecondary)
+                                .foregroundColor(Color.textSecondary)
                             Text(assist)
                                 .font(.caption)
                                 .fontWeight(.medium)
-                                .foregroundColor(FlowColors.textPrimary)
+                                .foregroundColor(Color.textPrimary)
                         }
 
                         Spacer()
@@ -724,25 +724,25 @@ private struct StageDetailCard: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Remarks")
                         .font(.caption)
-                        .foregroundColor(FlowColors.textSecondary)
+                        .foregroundColor(Color.textSecondary)
                         .textCase(.uppercase)
 
                     Text(stage.remarks)
                         .font(.caption)
-                        .foregroundColor(FlowColors.textPrimary)
+                        .foregroundColor(Color.textPrimary)
                         .lineLimit(3)
                 }
                 .padding(10)
-                .background(FlowColors.bgSurface)
+                .background(Color.bgSurface)
                 .cornerRadius(6)
             }
         }
         .padding(14)
-        .background(FlowColors.bgCard)
+        .background(Color.bgCard)
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(FlowColors.borderColor, lineWidth: 1)
+                .stroke(Color.borderColor, lineWidth: 1)
         )
     }
 }
@@ -763,18 +763,18 @@ private struct DateRowView: View {
         HStack(spacing: 8) {
             Image(systemName: "calendar")
                 .font(.system(size: 13))
-                .foregroundColor(FlowColors.oceanSwell)
+                .foregroundColor(Color.oceanSwell)
                 .frame(width: 14)
 
             Text(label)
                 .font(.caption)
-                .foregroundColor(FlowColors.textSecondary)
+                .foregroundColor(Color.textSecondary)
                 .frame(width: 50, alignment: .leading)
 
             Text(formattedDate)
                 .font(.caption)
                 .fontWeight(.medium)
-                .foregroundColor(FlowColors.textPrimary)
+                .foregroundColor(Color.textPrimary)
 
             Spacer()
         }
@@ -814,7 +814,7 @@ extension Calendar {
 
 #Preview {
     ZStack {
-        FlowColors.bgDark.ignoresSafeArea()
+        Color.bgDark.ignoresSafeArea()
 
         ScrollView {
             ProgramGanttView(buildingId: "test-123", buildingName: "Test Building")
