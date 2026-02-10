@@ -25,6 +25,7 @@
 		857C80092F36277E0079359B /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857C80072F36277E0079359B /* MoreView.swift */; };
 		857C800B2F36280F0079359B /* BuildingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 857C800A2F36280F0079359B /* BuildingDetailView.swift */; };
 		85DCD83C2F37429F005A7B75 /* Animations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85DCD83B2F37429F005A7B75 /* Animations.swift */; };
+		85A1C0022F38B0000079359B /* ProgramGanttView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A1C0012F38B0000079359B /* ProgramGanttView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +48,7 @@
 		857C80072F36277E0079359B /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
 		857C800A2F36280F0079359B /* BuildingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildingDetailView.swift; sourceTree = "<group>"; };
 		85DCD83B2F37429F005A7B75 /* Animations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Animations.swift; sourceTree = "<group>"; };
+		85A1C0012F38B0000079359B /* ProgramGanttView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramGanttView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -142,6 +144,7 @@
 			children = (
 				104 /* ProjectsListView.swift */,
 				105 /* ProjectDetailView.swift */,
+				85A1C0012F38B0000079359B /* ProgramGanttView.swift */,
 			);
 			path = Projects;
 			sourceTree = "<group>";
@@ -267,6 +270,7 @@
 				857C80032F36276A0079359B /* AnalyticsView.swift in Sources */,
 				011 /* MilestoneRow.swift in Sources */,
 				012 /* ActivityRow.swift in Sources */,
+				85A1C0022F38B0000079359B /* ProgramGanttView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
