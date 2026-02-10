@@ -200,8 +200,15 @@ export interface BuildingInfoStats {
   }
 }
 
+export interface BuildingInfoGrouped {
+  pit: BuildingInfo[]
+  pot: BuildingInfo[]
+  pht: BuildingInfo[]
+}
+
 export interface BuildingInfoResponse {
   buildings: BuildingInfo[]
+  grouped: BuildingInfoGrouped
   stats: BuildingInfoStats
   lastUpdated: string
 }

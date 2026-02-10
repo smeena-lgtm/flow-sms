@@ -32,14 +32,6 @@ struct BuildingDetailView: View {
                     // Top KPIs
                     KPIGrid(building: building)
 
-                    // Project Program / Gantt Chart
-                    ProgramGanttView(
-                        buildingId: building.identity.marketingName.isEmpty
-                            ? building.identity.plotNo
-                            : building.identity.marketingName,
-                        buildingName: building.identity.marketingName
-                    )
-
                     // GFA Section
                     GFASection(building: building)
 

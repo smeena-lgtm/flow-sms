@@ -19,6 +19,7 @@ import {
   PanelTop,
 } from "lucide-react"
 import type { BuildingInfo } from "@/types/building"
+import ProgramGantt from "@/components/projects/ProgramGantt"
 
 export default function BuildingDetailPage() {
   const params = useParams()
@@ -145,6 +146,12 @@ export default function BuildingDetailPage() {
           value={formatNumber(building.parkingFacade.parkingProposed)}
         />
       </div>
+
+      {/* Project Program / Gantt Chart */}
+      <ProgramGantt
+        projectId={building.identity.marketingName || building.identity.plotNo}
+        projectName={building.identity.marketingName}
+      />
 
       {/* GFA Section */}
       <Section title="Gross Floor Area" icon={Building2}>

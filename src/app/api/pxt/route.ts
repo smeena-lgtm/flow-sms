@@ -318,7 +318,7 @@ export async function GET(request: Request) {
       pht: buildings.filter((b) => b.identity.status === "PHT"),
     }
 
-    const result: BuildingInfoResponse & { grouped: typeof grouped } = {
+    const result: BuildingInfoResponse = {
       buildings: filteredBuildings,
       grouped,
       stats,

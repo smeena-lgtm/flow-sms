@@ -2,42 +2,62 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selectedTab = 0
+    @Namespace private var animation
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            DashboardView()
-                .tabItem {
-                    Image(systemName: "square.grid.2x2.fill")
-                    Text("Dashboard")
-                }
-                .tag(0)
+            // Analytics Tab (Home)
+            NavigationStack {
+                AnalyticsView()
+            }
+            .tabItem {
+                Image(systemName: selectedTab == 0 ? "chart.bar.fill" : "chart.bar")
+                Text("Analytics")
+            }
+            .tag(0)
 
+            // Projects Tab (PXT Buildings)
             NavigationStack {
                 ProjectsListView()
             }
             .tabItem {
-                Image(systemName: "folder.fill")
+                Image(systemName: selectedTab == 1 ? "building.2.fill" : "building.2")
                 Text("Projects")
             }
             .tag(1)
 
-            // Placeholder for Team
-            PlaceholderView(title: "Team", icon: "person.2.fill", message: "Team management coming soon")
-                .tabItem {
-                    Image(systemName: "person.2.fill")
-                    Text("Team")
-                }
-                .tag(2)
+            // HR Tab
+            NavigationStack {
+                HRView()
+            }
+            .tabItem {
+                Image(systemName: selectedTab == 2 ? "person.2.fill" : "person.2")
+                Text("HR")
+            }
+            .tag(2)
 
-            // Placeholder for Settings
-            PlaceholderView(title: "Settings", icon: "gearshape.fill", message: "Settings coming soon")
-                .tabItem {
-                    Image(systemName: "gearshape.fill")
-                    Text("Settings")
-                }
-                .tag(3)
+            // Tasks Tab
+            NavigationStack {
+                TasksView()
+            }
+            .tabItem {
+                Image(systemName: selectedTab == 3 ? "checklist.checked" : "checklist")
+                Text("Tasks")
+            }
+            .tag(3)
+
+            // More Tab (Documents + Settings)
+            NavigationStack {
+                MoreView()
+            }
+            .tabItem {
+                Image(systemName: selectedTab == 4 ? "ellipsis.circle.fill" : "ellipsis.circle")
+                Text("More")
+            }
+            .tag(4)
         }
         .tint(.oceanSwell)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedTab)
         .onAppear {
             // Customize tab bar appearance
             let appearance = UITabBarAppearance()
@@ -58,35 +78,6 @@ struct MainTabView: View {
 
             UITabBar.appearance().standardAppearance = appearance
             UITabBar.appearance().scrollEdgeAppearance = appearance
-        }
-    }
-}
-
-// MARK: - Placeholder View
-
-struct PlaceholderView: View {
-    let title: String
-    let icon: String
-    let message: String
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                Image(systemName: icon)
-                    .font(.system(size: 60))
-                    .foregroundColor(.textSecondary)
-
-                Text(message)
-                    .font(.headline)
-                    .foregroundColor(.textSecondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.bgDark)
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.large)
-            .toolbarBackground(Color.bgCard, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
         }
     }
 }

@@ -87,11 +87,10 @@ struct ProjectsListView: View {
                 }
 
                 if viewModel.isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .oceanSwell))
+                    LoadingSpinner()
                         .padding(.top, 50)
                 } else if let error = viewModel.error {
-                    ErrorView(message: error) {
+                    BuildingsErrorView(message: error) {
                         Task { await viewModel.loadBuildings() }
                     }
                 } else {
@@ -105,11 +104,12 @@ struct ProjectsListView: View {
                     .padding(.horizontal)
 
                     LazyVStack(spacing: 12) {
-                        ForEach(filteredBuildings) { building in
+                        ForEach(Array(filteredBuildings.enumerated()), id: \.element.id) { index, building in
                             NavigationLink(destination: BuildingDetailView(buildingId: building.id)) {
                                 BuildingListCard(building: building)
                             }
-                            .buttonStyle(PlainButtonStyle())
+                            .buttonStyle(ScaleButtonStyle())
+                            .animatedCard(index: index)
                         }
                     }
                     .padding(.horizontal)
@@ -203,6 +203,7 @@ struct StatusPill: View {
                     .padding(.vertical, 2)
                     .background(isSelected ? Color.white.opacity(0.2) : Color.bgHover)
                     .clipShape(Capsule())
+                    .contentTransition(.numericText())
             }
             .font(.subheadline)
             .foregroundColor(isSelected ? .midnight : .textSecondary)
@@ -210,7 +211,10 @@ struct StatusPill: View {
             .padding(.vertical, 10)
             .background(isSelected ? color : Color.bgCard)
             .clipShape(Capsule())
+            .scaleEffect(isSelected ? 1.02 : 1.0)
         }
+        .buttonStyle(BounceButtonStyle())
+        .animation(.smoothSpring, value: isSelected)
     }
 }
 
@@ -350,9 +354,9 @@ struct MetricItem: View {
     }
 }
 
-// MARK: - Error View
+// MARK: - Buildings Error View
 
-struct ErrorView: View {
+struct BuildingsErrorView: View {
     let message: String
     let retryAction: () -> Void
 

@@ -76,14 +76,16 @@ enum BuildingLocation: String, Codable {
 // MARK: - Building Info Models
 
 struct BuildingIdentity: Codable {
-    let plotNo: String
-    let marketingName: String
-    let designManager: String
-    let location: String
-    let status: String
-    let numberOfBuildings: Double
-    let plotAreaFt2: Double
-    let far: Double
+    var plotNo: String = ""
+    var marketingName: String = ""
+    var designManager: String = ""
+    var location: String = ""
+    var status: String = ""
+    var numberOfBuildings: Double = 0
+    var plotAreaFt2: Double = 0
+    var far: Double = 0
+
+    init() {}
 
     var locationEnum: BuildingLocation {
         BuildingLocation(rawValue: location) ?? .unknown
@@ -94,7 +96,7 @@ struct BuildingIdentity: Codable {
     }
 
     var displayName: String {
-        marketingName.isEmpty ? plotNo : marketingName
+        marketingName.isEmpty ? (plotNo.isEmpty ? "Unknown" : plotNo) : marketingName
     }
 
     var projectId: String {
@@ -103,173 +105,300 @@ struct BuildingIdentity: Codable {
 }
 
 struct BuildingGFA: Codable {
-    let resProposedGfaFt2: Double
-    let resProposedGfaPct: Double
-    let comProposedGfaFt2: Double
-    let comProposedGfaPct: Double
-    let totalProposedGfaFt2: Double
+    var resProposedGfaFt2: Double = 0
+    var resProposedGfaPct: Double = 0
+    var comProposedGfaFt2: Double = 0
+    var comProposedGfaPct: Double = 0
+    var totalProposedGfaFt2: Double = 0
+    init() {}
 }
 
 struct BuildingSellable: Codable {
-    let suiteSellableFt2: Double?
-    let suiteSelableFt2: Double?  // API has typo
-    let suiteSellableRatio: Double
-    let balconySaFt2: Double
-    let leasableFt2: Double?
-    let balconyRatio: Double
-    let totalSellableFt2: Double
-    let nonSellableFt2: Double
-    let nonSellableRatio: Double
-    let efficiencySaGfa: Double
+    var suiteSellableFt2: Double?
+    var suiteSelableFt2: Double?  // API has typo for residential
+    var suiteSellableRatio: Double = 0
+    var balconySaFt2: Double = 0
+    var leasableFt2: Double?
+    var balconyRatio: Double = 0
+    var totalSellableFt2: Double = 0
+    var nonSellableFt2: Double = 0
+    var nonSellableRatio: Double = 0
+    var efficiencySaGfa: Double = 0
 
     var actualSuiteSellable: Double {
         suiteSellableFt2 ?? suiteSelableFt2 ?? 0
     }
+
+    // Default initializer for use in BuildingInfo defaults
+    init() {
+        suiteSellableFt2 = nil
+        suiteSelableFt2 = nil
+        suiteSellableRatio = 0
+        balconySaFt2 = 0
+        leasableFt2 = nil
+        balconyRatio = 0
+        totalSellableFt2 = 0
+        nonSellableFt2 = 0
+        nonSellableRatio = 0
+        efficiencySaGfa = 0
+    }
+
+    // Custom decoder to handle missing keys gracefully
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        suiteSellableFt2 = try container.decodeIfPresent(Double.self, forKey: .suiteSellableFt2)
+        suiteSelableFt2 = try container.decodeIfPresent(Double.self, forKey: .suiteSelableFt2)
+        suiteSellableRatio = try container.decodeIfPresent(Double.self, forKey: .suiteSellableRatio) ?? 0
+        balconySaFt2 = try container.decodeIfPresent(Double.self, forKey: .balconySaFt2) ?? 0
+        leasableFt2 = try container.decodeIfPresent(Double.self, forKey: .leasableFt2)
+        balconyRatio = try container.decodeIfPresent(Double.self, forKey: .balconyRatio) ?? 0
+        totalSellableFt2 = try container.decodeIfPresent(Double.self, forKey: .totalSellableFt2) ?? 0
+        nonSellableFt2 = try container.decodeIfPresent(Double.self, forKey: .nonSellableFt2) ?? 0
+        nonSellableRatio = try container.decodeIfPresent(Double.self, forKey: .nonSellableRatio) ?? 0
+        efficiencySaGfa = try container.decodeIfPresent(Double.self, forKey: .efficiencySaGfa) ?? 0
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case suiteSellableFt2, suiteSelableFt2, suiteSellableRatio
+        case balconySaFt2, leasableFt2, balconyRatio
+        case totalSellableFt2, nonSellableFt2, nonSellableRatio, efficiencySaGfa
+    }
 }
 
 struct BuildingAMI: Codable {
-    let areaFt2: Double
-    let pct: Double
+    var areaFt2: Double = 0
+    var pct: Double = 0
+    init() {}
 }
 
 struct BuildingUnitCounts: Codable {
-    let studio: Double
-    let oneBed: Double
-    let twoBed: Double
-    let threeBed: Double
-    let fourBed: Double
-    let liner: Double
-    let total: Double
+    var studio: Double = 0
+    var oneBed: Double = 0
+    var twoBed: Double = 0
+    var threeBed: Double = 0
+    var fourBed: Double = 0
+    var liner: Double = 0
+    var total: Double = 0
+    init() {}
 }
 
 struct BuildingUnitMixPct: Codable {
-    let studio: Double
-    let oneBed: Double
-    let twoBed: Double
-    let threeBed: Double
-    let fourBed: Double
-    let liner: Double
+    var studio: Double = 0
+    var oneBed: Double = 0
+    var twoBed: Double = 0
+    var threeBed: Double = 0
+    var fourBed: Double = 0
+    var liner: Double = 0
+    init() {}
 }
 
 struct BuildingBalconyPct: Codable {
-    let studio: Double
-    let oneBed: Double
-    let twoBed: Double
-    let threeBed: Double
-    let fourBed: Double
-    let liner: Double
+    var studio: Double = 0
+    var oneBed: Double = 0
+    var twoBed: Double = 0
+    var threeBed: Double = 0
+    var fourBed: Double = 0
+    var liner: Double = 0
+    init() {}
 }
 
 struct RentalCondoSplit: Codable {
-    let rental: Double
-    let condo: Double
+    var rental: Double = 0
+    var condo: Double = 0
+    init() {}
 }
 
 struct BuildingRentalCondoSplit: Codable {
-    let studio: RentalCondoSplit
-    let oneBed: RentalCondoSplit
-    let twoBed: RentalCondoSplit
-    let threeBed: RentalCondoSplit
-    let fourBed: RentalCondoSplit
-    let liner: RentalCondoSplit
+    var studio: RentalCondoSplit = RentalCondoSplit()
+    var oneBed: RentalCondoSplit = RentalCondoSplit()
+    var twoBed: RentalCondoSplit = RentalCondoSplit()
+    var threeBed: RentalCondoSplit = RentalCondoSplit()
+    var fourBed: RentalCondoSplit = RentalCondoSplit()
+    var liner: RentalCondoSplit = RentalCondoSplit()
+    init() {}
 }
 
 struct BuildingRetailGrid: Codable {
-    let gridFt: Double
-    let retailSmallQty: Double
-    let retailCornerQty: Double
-    let retailRegularQty: Double
+    var gridFt: Double = 0
+    var retailSmallQty: Double = 0
+    var retailCornerQty: Double = 0
+    var retailRegularQty: Double = 0
+    init() {}
 }
 
 struct BuildingMEP: Codable {
-    let electricalLoadKw: Double
-    let coolingLoadTr: Double
-    let waterDemandFt3Day: Double
-    let sewerageDemandFt3Day: Double
-    let gasDemandFt3Hr: Double
+    var electricalLoadKw: Double = 0
+    var coolingLoadTr: Double = 0
+    var waterDemandFt3Day: Double = 0
+    var sewerageDemandFt3Day: Double = 0
+    var gasDemandFt3Hr: Double = 0
+    init() {}
 }
 
 struct BuildingParkingFacade: Codable {
-    let parkingRequired: Double
-    let parkingProposed: Double
-    let parkingEfficiencyFt2Car: Double
-    let additionalParking: Double
-    let evParkingLots: Double
-    let facadeGlazingPct: Double
-    let facadeSpandrelPct: Double
-    let facadeSolidPct: Double
+    var parkingRequired: Double = 0
+    var parkingProposed: Double = 0
+    var parkingEfficiencyFt2Car: Double = 0
+    var additionalParking: Double = 0
+    var evParkingLots: Double = 0
+    var facadeGlazingPct: Double = 0
+    var facadeSpandrelPct: Double = 0
+    var facadeSolidPct: Double = 0
+    init() {}
 }
 
 struct BuildingLiftsHeight: Codable {
-    let passengerCount: Double
-    let passengerCapacity: Double
-    let serviceCount: Double
-    let serviceCapacity: Double
-    let totalLifts: Double
-    let heightFt: Double
-    let buildingConfiguration: String
+    var passengerCount: Double = 0
+    var passengerCapacity: Double = 0
+    var serviceCount: Double = 0
+    var serviceCapacity: Double = 0
+    var totalLifts: Double = 0
+    var heightFt: Double = 0
+    var buildingConfiguration: String = ""
+    init() {}
 }
 
 struct BuildingBUA: Codable {
-    let buaFt2: Double
-    let gfaOverBua: Double
+    var buaFt2: Double = 0
+    var gfaOverBua: Double = 0
+    init() {}
 }
 
 struct BuildingInfo: Codable, Identifiable {
-    let identity: BuildingIdentity
-    let gfa: BuildingGFA
-    let residentialSellable: BuildingSellable
-    let commercialSellable: BuildingSellable
-    let totalSellable: BuildingSellable
-    let ami: BuildingAMI
-    let unitCounts: BuildingUnitCounts
-    let unitMixPct: BuildingUnitMixPct
-    let balconyPct: BuildingBalconyPct
-    let rentalCondoSplit: BuildingRentalCondoSplit
-    let retailGrid: BuildingRetailGrid
-    let mep: BuildingMEP
-    let parkingFacade: BuildingParkingFacade
-    let liftsHeight: BuildingLiftsHeight
-    let bua: BuildingBUA
+    var identity: BuildingIdentity = BuildingIdentity()
+    var gfa: BuildingGFA = BuildingGFA()
+    var residentialSellable: BuildingSellable = BuildingSellable()
+    var commercialSellable: BuildingSellable = BuildingSellable()
+    var totalSellable: BuildingSellable = BuildingSellable()
+    var ami: BuildingAMI = BuildingAMI()
+    var unitCounts: BuildingUnitCounts = BuildingUnitCounts()
+    var unitMixPct: BuildingUnitMixPct = BuildingUnitMixPct()
+    var balconyPct: BuildingBalconyPct = BuildingBalconyPct()
+    var rentalCondoSplit: BuildingRentalCondoSplit = BuildingRentalCondoSplit()
+    var retailGrid: BuildingRetailGrid = BuildingRetailGrid()
+    var mep: BuildingMEP = BuildingMEP()
+    var parkingFacade: BuildingParkingFacade = BuildingParkingFacade()
+    var liftsHeight: BuildingLiftsHeight = BuildingLiftsHeight()
+    var bua: BuildingBUA = BuildingBUA()
 
     var id: String { identity.projectId }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        identity = (try? container.decode(BuildingIdentity.self, forKey: .identity)) ?? BuildingIdentity()
+        gfa = (try? container.decode(BuildingGFA.self, forKey: .gfa)) ?? BuildingGFA()
+        residentialSellable = (try? container.decode(BuildingSellable.self, forKey: .residentialSellable)) ?? BuildingSellable()
+        commercialSellable = (try? container.decode(BuildingSellable.self, forKey: .commercialSellable)) ?? BuildingSellable()
+        totalSellable = (try? container.decode(BuildingSellable.self, forKey: .totalSellable)) ?? BuildingSellable()
+        ami = (try? container.decode(BuildingAMI.self, forKey: .ami)) ?? BuildingAMI()
+        unitCounts = (try? container.decode(BuildingUnitCounts.self, forKey: .unitCounts)) ?? BuildingUnitCounts()
+        unitMixPct = (try? container.decode(BuildingUnitMixPct.self, forKey: .unitMixPct)) ?? BuildingUnitMixPct()
+        balconyPct = (try? container.decode(BuildingBalconyPct.self, forKey: .balconyPct)) ?? BuildingBalconyPct()
+        rentalCondoSplit = (try? container.decode(BuildingRentalCondoSplit.self, forKey: .rentalCondoSplit)) ?? BuildingRentalCondoSplit()
+        retailGrid = (try? container.decode(BuildingRetailGrid.self, forKey: .retailGrid)) ?? BuildingRetailGrid()
+        mep = (try? container.decode(BuildingMEP.self, forKey: .mep)) ?? BuildingMEP()
+        parkingFacade = (try? container.decode(BuildingParkingFacade.self, forKey: .parkingFacade)) ?? BuildingParkingFacade()
+        liftsHeight = (try? container.decode(BuildingLiftsHeight.self, forKey: .liftsHeight)) ?? BuildingLiftsHeight()
+        bua = (try? container.decode(BuildingBUA.self, forKey: .bua)) ?? BuildingBUA()
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case identity, gfa, residentialSellable, commercialSellable, totalSellable
+        case ami, unitCounts, unitMixPct, balconyPct, rentalCondoSplit
+        case retailGrid, mep, parkingFacade, liftsHeight, bua
+    }
 }
 
 struct BuildingInfoStats: Codable {
-    let totalBuildings: Int
-    let totalUnits: Double
-    let totalGfaFt2: Double
-    let totalSellableFt2: Double
-    let avgEfficiency: Double
-    let avgFar: Double
-    let totalParking: Double
-    let byDesignManager: [String: Int]
-    let byLocation: ByLocation
-    let byStatus: ByStatus
+    var totalBuildings: Int = 0
+    var totalUnits: Double = 0
+    var totalGfaFt2: Double = 0
+    var totalSellableFt2: Double = 0
+    var avgEfficiency: Double = 0
+    var avgFar: Double = 0
+    var totalParking: Double = 0
+    var byDesignManager: [String: Int] = [:]
+    var byLocation: ByLocation = ByLocation()
+    var byStatus: ByStatus = ByStatus()
+
+    init() {}
 
     struct ByLocation: Codable {
-        let miami: Int
-        let riyadh: Int
+        var miami: Int = 0
+        var riyadh: Int = 0
+
+        init(miami: Int = 0, riyadh: Int = 0) {
+            self.miami = miami
+            self.riyadh = riyadh
+        }
     }
 
     struct ByStatus: Codable {
-        let pit: Int
-        let pot: Int
-        let pht: Int
+        var pit: Int = 0
+        var pot: Int = 0
+        var pht: Int = 0
+
+        init(pit: Int = 0, pot: Int = 0, pht: Int = 0) {
+            self.pit = pit
+            self.pot = pot
+            self.pht = pht
+        }
     }
 }
 
 struct BuildingInfoGrouped: Codable {
-    let pit: [BuildingInfo]
-    let pot: [BuildingInfo]
-    let pht: [BuildingInfo]
+    var pit: [BuildingInfo] = []
+    var pot: [BuildingInfo] = []
+    var pht: [BuildingInfo] = []
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        pit = (try? container.decode([BuildingInfo].self, forKey: .pit)) ?? []
+        pot = (try? container.decode([BuildingInfo].self, forKey: .pot)) ?? []
+        pht = (try? container.decode([BuildingInfo].self, forKey: .pht)) ?? []
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case pit, pot, pht
+    }
 }
 
 struct BuildingInfoResponse: Codable {
-    let buildings: [BuildingInfo]
-    let grouped: BuildingInfoGrouped
-    let stats: BuildingInfoStats
-    let lastUpdated: String
+    // VERSION MARKER: v2.0 - 2026-02-06 - If you don't see this in logs, Xcode is using cached code!
+    static let modelVersion = "v2.0-2026-02-06"
+
+    var buildings: [BuildingInfo] = []
+    var grouped: BuildingInfoGrouped = BuildingInfoGrouped()
+    var stats: BuildingInfoStats = BuildingInfoStats()
+    var lastUpdated: String = ""
+
+    private enum CodingKeys: String, CodingKey {
+        case buildings, grouped, stats, lastUpdated
+    }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        // CRITICAL: If you see the old print statements but NOT this one, Xcode has cached code
+        print("🚀🚀🚀 BuildingInfoResponse \(Self.modelVersion) DECODER CALLED 🚀🚀🚀")
+
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Log available keys for debugging
+        let availableKeys = container.allKeys.map { $0.stringValue }
+        print("🔍 BuildingInfoResponse \(Self.modelVersion) available keys: \(availableKeys)")
+
+        buildings = (try? container.decode([BuildingInfo].self, forKey: .buildings)) ?? []
+        grouped = (try? container.decode(BuildingInfoGrouped.self, forKey: .grouped)) ?? BuildingInfoGrouped()
+        stats = (try? container.decode(BuildingInfoStats.self, forKey: .stats)) ?? BuildingInfoStats()
+        lastUpdated = (try? container.decode(String.self, forKey: .lastUpdated)) ?? ""
+
+        print("✅ BuildingInfoResponse \(Self.modelVersion): Decoded \(buildings.count) buildings")
+    }
 }
 
 // MARK: - Legacy Project Types & Status (kept for compatibility)
