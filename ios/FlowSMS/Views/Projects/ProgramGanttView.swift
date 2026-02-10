@@ -29,17 +29,42 @@ struct ProgramStage: Codable, Identifiable {
 
     var effectiveStartDate: Date? {
         let dateString = startDate ?? dueDate
-        return dateString.flatMap { DateFormatter.iso8601.date(from: $0) }
+        return dateString.flatMap { ProgramDateFormatter.shared.date(from: $0) }
     }
 
     var effectiveEndDate: Date? {
         let dateString = endDate ?? dueDate
-        return dateString.flatMap { DateFormatter.iso8601.date(from: $0) }
+        return dateString.flatMap { ProgramDateFormatter.shared.date(from: $0) }
     }
 
     var isMilestone: Bool {
         milestoneOnly == true
     }
+}
+
+// Dedicated date formatter to avoid conflicts
+private enum ProgramDateFormatter {
+    static let shared: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        return formatter
+    }()
+
+    static let display: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
+
+    static let monthYear: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM yy"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
 }
 
 enum ProgramStageStatus: String, CaseIterable {
@@ -117,18 +142,6 @@ struct ProgramResponse: Codable {
     let program: ProjectProgram
 }
 
-// MARK: - Date Formatter Extension
-
-extension DateFormatter {
-    static let iso8601: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        return formatter
-    }()
-}
-
 // MARK: - ViewModel
 
 @MainActor
@@ -147,8 +160,11 @@ class ProgramGanttViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
 
-        let urlString = "https://flow-sms.vercel.app/api/programs?projectId=\(buildingId)"
-        guard let url = URL(string: urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "") else {
+        // Use URLComponents for proper encoding
+        var components = URLComponents(string: "https://flow-sms.vercel.app/api/programs")
+        components?.queryItems = [URLQueryItem(name: "projectId", value: buildingId)]
+
+        guard let url = components?.url else {
             errorMessage = "Invalid URL"
             isLoading = false
             return
@@ -158,7 +174,8 @@ class ProgramGanttViewModel: ObservableObject {
             let (data, response) = try await URLSession.shared.data(from: url)
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                errorMessage = "Server error"
+                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                errorMessage = "Server error (\(statusCode))"
                 isLoading = false
                 return
             }
@@ -195,609 +212,280 @@ struct ProgramGanttView: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             // Header
-            HeaderView(
-                projectName: viewModel.program?.projectName ?? "Project Program",
-                stageCount: viewModel.program?.stages.count ?? 0,
-                lastUpdated: viewModel.program?.lastUpdated
-            )
+            HStack(spacing: 10) {
+                Image(systemName: "chart.gantt")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.oceanSwell)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Project Program")
+                        .font(.headline)
+                        .foregroundColor(.textPrimary)
+
+                    if let program = viewModel.program {
+                        Text("\(program.stages.count) stages · Updated \(program.lastUpdated)")
+                            .font(.caption2)
+                            .foregroundColor(.textSecondary)
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(16)
 
             // Segmented Control
-            Picker("View", selection: $selectedTab) {
-                Text("Timeline").tag(GanttTab.timeline)
-                Text("Details").tag(GanttTab.details)
+            if viewModel.program != nil {
+                Picker("View", selection: $selectedTab) {
+                    Text("Timeline").tag(GanttTab.timeline)
+                    Text("Details").tag(GanttTab.details)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
             }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
 
             // Content
             if viewModel.isLoading {
-                ProgressView()
-                    .frame(maxHeight: .infinity)
+                HStack {
+                    Spacer()
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .oceanSwell))
+                        Text("Loading program...")
+                            .font(.caption)
+                            .foregroundColor(.textSecondary)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 40)
             } else if let errorMessage = viewModel.errorMessage {
-                VStack(spacing: 12) {
+                VStack(spacing: 10) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(Color.heart)
-                    Text("Error Loading Program")
-                        .font(.headline)
-                        .foregroundColor(Color.textPrimary)
+                        .font(.system(size: 24))
+                        .foregroundColor(.sunlight)
                     Text(errorMessage)
                         .font(.caption)
-                        .foregroundColor(Color.textSecondary)
+                        .foregroundColor(.textSecondary)
                         .multilineTextAlignment(.center)
                 }
-                .frame(maxHeight: .infinity)
-                .padding(16)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
             } else if let program = viewModel.program, !program.stages.isEmpty {
                 if selectedTab == .timeline {
-                    TimelineGanttView(stages: program.stages)
+                    ProgramTimelineView(stages: program.stages)
                 } else {
-                    DetailsListView(stages: program.stages)
+                    ProgramDetailsListView(stages: program.stages)
                 }
             } else {
-                VStack(spacing: 12) {
+                VStack(spacing: 10) {
                     Image(systemName: "chart.bar.xaxis")
-                        .font(.system(size: 32))
-                        .foregroundColor(Color.textSecondary)
-                    Text("No Program Data")
-                        .font(.headline)
-                        .foregroundColor(Color.textPrimary)
-                    Text("No stages found for this project")
+                        .font(.system(size: 24))
+                        .foregroundColor(.textSecondary)
+                    Text("No program data available")
                         .font(.caption)
-                        .foregroundColor(Color.textSecondary)
+                        .foregroundColor(.textSecondary)
                 }
-                .frame(maxHeight: .infinity)
-                .padding(16)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
+            }
+
+            // Legend
+            if viewModel.program != nil {
+                HStack(spacing: 12) {
+                    ForEach(ProgramCategory.allCases, id: \.self) { cat in
+                        HStack(spacing: 4) {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(cat.color)
+                                .frame(width: 10, height: 10)
+                            Text(cat.label)
+                                .font(.caption2)
+                                .foregroundColor(.textSecondary)
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
         }
-        .padding(.vertical, 16)
-        .background(Color.bgDark)
+        .background(Color.bgCard)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .task {
             await viewModel.fetchProgram()
         }
     }
 }
 
-// MARK: - Header View
+// MARK: - Timeline View
 
-private struct HeaderView: View {
-    let projectName: String
-    let stageCount: Int
-    let lastUpdated: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: "chart.gantt.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundColor(Color.oceanSwell)
-
-                Text("Project Program")
-                    .font(.headline)
-                    .foregroundColor(Color.textPrimary)
-
-                Spacer()
-
-                Text("\(stageCount) stages")
-                    .font(.caption)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.bgCard)
-                    .foregroundColor(Color.textSecondary)
-                    .cornerRadius(6)
-            }
-
-            HStack(spacing: 8) {
-                Text(projectName)
-                    .font(.system(.body, design: .default))
-                    .foregroundColor(Color.textPrimary)
-                    .lineLimit(1)
-
-                Spacer()
-
-                if let lastUpdated = lastUpdated {
-                    Text("Updated: \(lastUpdated)")
-                        .font(.caption2)
-                        .foregroundColor(Color.textSecondary)
-                }
-            }
-
-            // Legend
-            LegendView()
-        }
-        .padding(16)
-        .background(Color.bgCard)
-        .cornerRadius(12)
-        .padding(.horizontal, 16)
-    }
-}
-
-// MARK: - Legend View
-
-private struct LegendView: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Legend")
-                .font(.caption)
-                .foregroundColor(Color.textSecondary)
-                .textCase(.uppercase)
-
-            HStack(spacing: 16) {
-                VStack(spacing: 8) {
-                    HStack(spacing: 6) {
-                        ForEach(ProgramCategory.allCases, id: \.self) { category in
-                            HStack(spacing: 4) {
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(category.color)
-                                    .frame(width: 12, height: 12)
-                                Text(category.label)
-                                    .font(.caption2)
-                                    .foregroundColor(Color.textSecondary)
-                            }
-                        }
-                    }
-                }
-
-                Spacer()
-            }
-        }
-    }
-}
-
-// MARK: - Timeline Gantt View
-
-private struct TimelineGanttView: View {
+private struct ProgramTimelineView: View {
     let stages: [ProgramStage]
-    @State private var scrollPosition: CGFloat = 0
 
     var dateRange: (start: Date, end: Date)? {
         let allDates = stages.compactMap { [$0.effectiveStartDate, $0.effectiveEndDate].compactMap { $0 } }.flatMap { $0 }
         guard !allDates.isEmpty else { return nil }
 
-        let minDate = allDates.min()!
-        let maxDate = allDates.max()!
-
         let calendar = Calendar.current
-        let paddedStart = calendar.date(byAdding: .month, value: -1, to: minDate)!
-        let paddedEnd = calendar.date(byAdding: .month, value: 1, to: maxDate)!
-
+        let paddedStart = calendar.date(byAdding: .month, value: -1, to: allDates.min()!)!
+        let paddedEnd = calendar.date(byAdding: .month, value: 1, to: allDates.max()!)!
         return (paddedStart, paddedEnd)
     }
 
     var body: some View {
         if let dateRange = dateRange {
-            GeometryReader { geometry in
-                HStack(spacing: 0) {
-                    // Fixed left column - Stage names
-                    VStack(alignment: .leading, spacing: 0) {
-                        // Header
-                        HStack(spacing: 8) {
-                            Text("Stage")
-                                .font(.caption)
-                                .foregroundColor(Color.textSecondary)
-                            Spacer()
+            VStack(spacing: 0) {
+                // Stage rows with horizontal scroll for bars
+                ForEach(Array(stages.enumerated()), id: \.element.id) { index, stage in
+                    HStack(spacing: 0) {
+                        // Fixed left: stage name
+                        HStack(spacing: 6) {
+                            Image(systemName: stage.statusEnum.icon)
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(stage.statusEnum.color)
+                                .frame(width: 14)
+
+                            Text(stage.shortName ?? stage.name)
+                                .font(.caption2)
+                                .fontWeight(.medium)
+                                .foregroundColor(.textPrimary)
+                                .lineLimit(1)
                         }
-                        .frame(height: 50)
-                        .padding(.horizontal, 12)
-                        .background(Color.bgCard)
-                        .borderBottom(width: 1, color: Color.borderColor)
+                        .frame(width: 110, alignment: .leading)
+                        .padding(.horizontal, 8)
 
-                        // Stages
-                        ScrollView(.vertical, showsIndicators: false) {
-                            VStack(spacing: 0) {
-                                ForEach(Array(stages.enumerated()), id: \.element.id) { index, stage in
-                                    VStack(spacing: 0) {
-                                        HStack(spacing: 8) {
-                                            Image(systemName: stage.statusEnum.icon)
-                                                .font(.system(size: 12, weight: .semibold))
-                                                .foregroundColor(stage.statusEnum.color)
-                                                .frame(width: 16)
+                        // Right: bar
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                // Today line
+                                let todayPct = todayPosition(in: dateRange)
+                                if todayPct >= 0 && todayPct <= 1 {
+                                    Rectangle()
+                                        .fill(Color.sunlight.opacity(0.6))
+                                        .frame(width: 1.5)
+                                        .offset(x: geo.size.width * todayPct)
+                                }
 
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(stage.shortName ?? stage.name)
-                                                    .font(.caption)
-                                                    .fontWeight(.medium)
-                                                    .foregroundColor(Color.textPrimary)
-                                                    .lineLimit(1)
-
-                                                Text(stage.lead)
-                                                    .font(.caption2)
-                                                    .foregroundColor(Color.textSecondary)
-                                                    .lineLimit(1)
-                                            }
-                                            Spacer()
-                                        }
-                                        .frame(height: 60)
-                                        .padding(.horizontal, 12)
-                                        .background(index % 2 == 0 ? Color.bgCard : Color.bgSurface)
-                                        .borderBottom(width: 1, color: Color.borderColor)
+                                // Bar or milestone
+                                if let start = stage.effectiveStartDate, let end = stage.effectiveEndDate {
+                                    let pos = barPosition(start: start, end: end, in: dateRange)
+                                    if stage.isMilestone {
+                                        Image(systemName: "diamond.fill")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(stage.categoryEnum.color)
+                                            .offset(x: geo.size.width * pos.start - 5)
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(stage.categoryEnum.color)
+                                            .frame(width: max(6, geo.size.width * pos.width), height: 16)
+                                            .offset(x: geo.size.width * pos.start)
                                     }
+                                } else {
+                                    Text("TBD")
+                                        .font(.system(size: 8))
+                                        .foregroundColor(.textSecondary)
+                                        .frame(maxWidth: .infinity, alignment: .center)
                                 }
                             }
                         }
                     }
-                    .frame(width: 120)
-                    .background(Color.bgCard)
-
-                    // Scrollable timeline area
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            // Timeline header with months
-                            TimelineHeaderView(dateRange: dateRange)
-                                .borderBottom(width: 1, color: Color.borderColor)
-
-                            // Gantt bars
-                            VStack(spacing: 0) {
-                                ForEach(Array(stages.enumerated()), id: \.element.id) { index, stage in
-                                    GanttBarRowView(
-                                        stage: stage,
-                                        dateRange: dateRange,
-                                        isAlternate: index % 2 == 0
-                                    )
-                                    .borderBottom(width: 1, color: Color.borderColor)
-                                }
-                            }
-                        }
-                    }
+                    .frame(height: 36)
+                    .background(index % 2 == 0 ? Color.bgCard : Color.bgSurface.opacity(0.5))
                 }
-                .cornerRadius(12)
-                .clipped()
             }
-            .frame(height: 400)
-            .padding(.horizontal, 16)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .padding(.horizontal, 12)
         } else {
-            VStack {
-                Text("No date information available")
-                    .foregroundColor(Color.textSecondary)
-            }
-            .frame(maxHeight: .infinity)
+            Text("No date information available")
+                .font(.caption)
+                .foregroundColor(.textSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
         }
     }
-}
 
-// MARK: - Timeline Header View
-
-private struct TimelineHeaderView: View {
-    let dateRange: (start: Date, end: Date)
-
-    var monthColumns: [(date: Date, label: String)] {
-        var columns: [(Date, String)] = []
-        let calendar = Calendar.current
-        var currentDate = calendar.startOfMonth(for: dateRange.start)
-
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM yy"
-
-        while currentDate <= dateRange.end {
-            columns.append((currentDate, formatter.string(from: currentDate)))
-            currentDate = calendar.date(byAdding: .month, value: 1, to: currentDate)!
-        }
-
-        return columns
+    private func barPosition(start: Date, end: Date, in range: (start: Date, end: Date)) -> (start: CGFloat, width: CGFloat) {
+        let cal = Calendar.current
+        let totalDays = max(1, cal.dateComponents([.day], from: range.start, to: range.end).day ?? 1)
+        let daysToStart = max(0, cal.dateComponents([.day], from: range.start, to: start).day ?? 0)
+        let barDays = max(1, cal.dateComponents([.day], from: start, to: end).day ?? 1)
+        return (CGFloat(daysToStart) / CGFloat(totalDays), CGFloat(barDays) / CGFloat(totalDays))
     }
 
-    var body: some View {
-        HStack(spacing: 0) {
-            ForEach(monthColumns, id: \.label) { month in
-                VStack {
-                    Text(month.label)
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(Color.textPrimary)
-                }
-                .frame(width: 100, height: 50)
-                .background(Color.bgSurface)
-                .borderRight(width: 1, color: Color.borderColor)
-            }
-
-            Spacer()
-                .frame(width: 100)
-        }
-    }
-}
-
-// MARK: - Gantt Bar Row View
-
-private struct GanttBarRowView: View {
-    let stage: ProgramStage
-    let dateRange: (start: Date, end: Date)
-    let isAlternate: Bool
-
-    var body: some View {
-        ZStack(alignment: .leading) {
-            // Background
-            Rectangle()
-                .fill(isAlternate ? Color.bgCard : Color.bgSurface)
-
-            // Today line
-            TodayLineView(dateRange: dateRange)
-
-            // Gantt bar
-            if let startDate = stage.effectiveStartDate, let endDate = stage.effectiveEndDate {
-                GanttBarComponentView(
-                    stage: stage,
-                    startDate: startDate,
-                    endDate: endDate,
-                    dateRange: dateRange
-                )
-            }
-        }
-        .frame(height: 60)
-    }
-}
-
-// MARK: - Gantt Bar Component
-
-private struct GanttBarComponentView: View {
-    let stage: ProgramStage
-    let startDate: Date
-    let endDate: Date
-    let dateRange: (start: Date, end: Date)
-
-    var positions: (start: CGFloat, width: CGFloat) {
-        let calendar = Calendar.current
-        let totalDays = calendar.dateComponents([.day], from: dateRange.start, to: dateRange.end).day ?? 1
-        let daysToStart = calendar.dateComponents([.day], from: dateRange.start, to: startDate).day ?? 0
-        let daysInBar = calendar.dateComponents([.day], from: startDate, to: endDate).day ?? 1
-
-        let percentStart = CGFloat(max(0, daysToStart)) / CGFloat(totalDays)
-        let percentWidth = CGFloat(max(1, daysInBar)) / CGFloat(totalDays)
-
-        return (percentStart, percentWidth)
-    }
-
-    var body: some View {
-        let baseWidth: CGFloat = 2400
-        let pos = positions
-
-        HStack(spacing: 0) {
-            Spacer()
-                .frame(width: baseWidth * pos.start)
-
-            if stage.isMilestone {
-                // Diamond for milestone
-                Image(systemName: "diamond.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(stage.categoryEnum.color)
-                    .frame(width: 24, height: 24)
-                    .offset(x: -12)
-            } else {
-                // Bar for regular stage
-                HStack(spacing: 0) {
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(stage.categoryEnum.color)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(stage.statusEnum.color, lineWidth: 2)
-                        )
-                }
-                .frame(width: max(40, baseWidth * pos.width), height: 32)
-                .padding(.vertical, 14)
-            }
-
-            Spacer()
-        }
-    }
-}
-
-// MARK: - Today Line View
-
-private struct TodayLineView: View {
-    let dateRange: (start: Date, end: Date)
-
-    var todayPosition: CGFloat {
-        let calendar = Calendar.current
+    private func todayPosition(in range: (start: Date, end: Date)) -> CGFloat {
+        let cal = Calendar.current
         let today = Date()
-
-        guard today >= dateRange.start && today <= dateRange.end else { return -1 }
-
-        let totalDays = calendar.dateComponents([.day], from: dateRange.start, to: dateRange.end).day ?? 1
-        let daysToToday = calendar.dateComponents([.day], from: dateRange.start, to: today).day ?? 0
-
+        guard today >= range.start, today <= range.end else { return -1 }
+        let totalDays = max(1, cal.dateComponents([.day], from: range.start, to: range.end).day ?? 1)
+        let daysToToday = cal.dateComponents([.day], from: range.start, to: today).day ?? 0
         return CGFloat(daysToToday) / CGFloat(totalDays)
-    }
-
-    var body: some View {
-        if todayPosition >= 0 {
-            VStack {
-                Rectangle()
-                    .fill(Color.sunlight)
-                    .frame(width: 2)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.leading, todayPosition * 2400)
-        }
     }
 }
 
 // MARK: - Details List View
 
-private struct DetailsListView: View {
+private struct ProgramDetailsListView: View {
     let stages: [ProgramStage]
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 12) {
-                ForEach(stages) { stage in
-                    StageDetailCard(stage: stage)
-                }
-            }
-            .padding(16)
-        }
-    }
-}
-
-// MARK: - Stage Detail Card
-
-private struct StageDetailCard: View {
-    let stage: ProgramStage
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header with category and status
-            HStack(spacing: 12) {
-                HStack(spacing: 8) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(stage.categoryEnum.color)
-                        .frame(width: 12, height: 12)
-
-                    Text(stage.name)
-                        .font(.headline)
-                        .foregroundColor(Color.textPrimary)
-                }
-
-                Spacer()
-
-                HStack(spacing: 6) {
-                    Image(systemName: stage.statusEnum.icon)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(stage.statusEnum.color)
-
-                    Text(stage.statusEnum.label)
-                        .font(.caption)
-                        .foregroundColor(stage.statusEnum.color)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(stage.statusEnum.color.opacity(0.15))
-                .cornerRadius(6)
-            }
-
-            Divider()
-                .background(Color.borderColor)
-
-            // Dates
-            VStack(alignment: .leading, spacing: 8) {
-                if let startDate = stage.effectiveStartDate {
-                    DateRowView(label: "Start", date: startDate)
-                }
-                if let endDate = stage.effectiveEndDate {
-                    DateRowView(label: "End", date: endDate)
-                }
-            }
-
-            // Team
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Image(systemName: "person.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color.oceanSwell)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Lead")
-                            .font(.caption)
-                            .foregroundColor(Color.textSecondary)
-                        Text(stage.lead)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(Color.textPrimary)
-                    }
-
-                    Spacer()
-                }
-
-                if let assist = stage.assist, !assist.isEmpty {
+        VStack(spacing: 8) {
+            ForEach(stages) { stage in
+                VStack(alignment: .leading, spacing: 8) {
+                    // Name + Status
                     HStack(spacing: 8) {
-                        Image(systemName: "person.2.circle.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color.oceanSwell.opacity(0.7))
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(stage.categoryEnum.color)
+                            .frame(width: 4, height: 20)
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Assist")
-                                .font(.caption)
-                                .foregroundColor(Color.textSecondary)
-                            Text(assist)
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .foregroundColor(Color.textPrimary)
-                        }
+                        Text(stage.name)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(stage.statusEnum == .cancelled ? .textSecondary : .textPrimary)
+                            .strikethrough(stage.statusEnum == .cancelled)
+                            .lineLimit(2)
 
                         Spacer()
+
+                        HStack(spacing: 4) {
+                            Image(systemName: stage.statusEnum.icon)
+                                .font(.system(size: 10))
+                            Text(stage.statusEnum.label)
+                                .font(.caption2)
+                        }
+                        .foregroundColor(stage.statusEnum.color)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(stage.statusEnum.color.opacity(0.12))
+                        .clipShape(Capsule())
+                    }
+
+                    // Dates + Lead
+                    HStack(spacing: 16) {
+                        if let start = stage.effectiveStartDate {
+                            Label(ProgramDateFormatter.display.string(from: start), systemImage: "calendar")
+                                .font(.caption2)
+                                .foregroundColor(.textSecondary)
+                        }
+
+                        Label(stage.lead, systemImage: "person.fill")
+                            .font(.caption2)
+                            .foregroundColor(stage.lead == "DLF" ? .purple : .oceanSwell)
+                    }
+
+                    // Remarks
+                    if !stage.remarks.isEmpty {
+                        Text(stage.remarks)
+                            .font(.caption2)
+                            .foregroundColor(.textSecondary)
+                            .lineLimit(2)
                     }
                 }
-            }
-
-            // Remarks
-            if !stage.remarks.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Remarks")
-                        .font(.caption)
-                        .foregroundColor(Color.textSecondary)
-                        .textCase(.uppercase)
-
-                    Text(stage.remarks)
-                        .font(.caption)
-                        .foregroundColor(Color.textPrimary)
-                        .lineLimit(3)
-                }
-                .padding(10)
+                .padding(12)
                 .background(Color.bgSurface)
-                .cornerRadius(6)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
             }
         }
-        .padding(14)
-        .background(Color.bgCard)
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.borderColor, lineWidth: 1)
-        )
-    }
-}
-
-// MARK: - Date Row Component
-
-private struct DateRowView: View {
-    let label: String
-    let date: Date
-
-    var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
-        return formatter.string(from: date)
-    }
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "calendar")
-                .font(.system(size: 13))
-                .foregroundColor(Color.oceanSwell)
-                .frame(width: 14)
-
-            Text(label)
-                .font(.caption)
-                .foregroundColor(Color.textSecondary)
-                .frame(width: 50, alignment: .leading)
-
-            Text(formattedDate)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(Color.textPrimary)
-
-            Spacer()
-        }
-    }
-}
-
-// MARK: - View Modifiers
-
-extension View {
-    func borderBottom(width: CGFloat, color: Color) -> some View {
-        self.overlay(alignment: .bottom) {
-            Rectangle()
-                .fill(color)
-                .frame(height: width)
-        }
-    }
-
-    func borderRight(width: CGFloat, color: Color) -> some View {
-        self.overlay(alignment: .trailing) {
-            Rectangle()
-                .fill(color)
-                .frame(width: width)
-        }
+        .padding(.horizontal, 12)
     }
 }
 
@@ -817,7 +505,8 @@ extension Calendar {
         Color.bgDark.ignoresSafeArea()
 
         ScrollView {
-            ProgramGanttView(buildingId: "test-123", buildingName: "Test Building")
+            ProgramGanttView(buildingId: "Flow Aventura", buildingName: "Flow Aventura")
+                .padding()
         }
     }
 }
