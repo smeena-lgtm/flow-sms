@@ -142,6 +142,11 @@ struct ProgramResponse: Codable {
     let program: ProjectProgram
 }
 
+struct ProgramsListResponse: Codable {
+    let programs: [ProjectProgram]
+    let totalPrograms: Int?
+}
+
 // MARK: - ViewModel
 
 @MainActor
@@ -151,42 +156,75 @@ class ProgramGanttViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let buildingId: String
+    private let buildingName: String?
+    private let baseURL = "https://flow-sms.vercel.app/api/programs"
 
-    init(buildingId: String) {
+    init(buildingId: String, buildingName: String? = nil) {
         self.buildingId = buildingId
+        self.buildingName = buildingName
     }
 
     func fetchProgram() async {
         isLoading = true
         errorMessage = nil
 
-        // Use URLComponents for proper encoding
-        var components = URLComponents(string: "https://flow-sms.vercel.app/api/programs")
-        components?.queryItems = [URLQueryItem(name: "projectId", value: buildingId)]
+        let decoder = JSONDecoder()
 
-        guard let url = components?.url else {
-            errorMessage = "Invalid URL"
+        // Strategy 1: exact projectId match
+        if let result = await tryFetchById(buildingId, decoder: decoder) {
+            self.program = result
             isLoading = false
             return
         }
 
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
+        // Strategy 2: search by projectName (partial match)
+        let nameToSearch = buildingName ?? buildingId
+        if let result = await tryFetchByName(nameToSearch, decoder: decoder) {
+            self.program = result
+            isLoading = false
+            return
+        }
 
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-                errorMessage = "Server error (\(statusCode))"
+        // Strategy 3: search by buildingId as name (last resort)
+        if buildingName != nil {
+            if let result = await tryFetchByName(buildingId, decoder: decoder) {
+                self.program = result
                 isLoading = false
                 return
             }
+        }
 
-            let decoder = JSONDecoder()
-            let programResponse = try decoder.decode(ProgramResponse.self, from: data)
-            self.program = programResponse.program
-            isLoading = false
+        errorMessage = "No program found"
+        isLoading = false
+    }
+
+    private func tryFetchById(_ id: String, decoder: JSONDecoder) async -> ProjectProgram? {
+        var components = URLComponents(string: baseURL)
+        components?.queryItems = [URLQueryItem(name: "projectId", value: id)]
+        guard let url = components?.url else { return nil }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
+            let result = try decoder.decode(ProgramResponse.self, from: data)
+            return result.program
         } catch {
-            errorMessage = error.localizedDescription
-            isLoading = false
+            return nil
+        }
+    }
+
+    private func tryFetchByName(_ name: String, decoder: JSONDecoder) async -> ProjectProgram? {
+        var components = URLComponents(string: baseURL)
+        components?.queryItems = [URLQueryItem(name: "projectName", value: name)]
+        guard let url = components?.url else { return nil }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
+            let result = try decoder.decode(ProgramsListResponse.self, from: data)
+            return result.programs.first
+        } catch {
+            return nil
         }
     }
 }
@@ -208,7 +246,7 @@ struct ProgramGanttView: View {
     init(buildingId: String, buildingName: String? = nil) {
         self.buildingId = buildingId
         self.buildingName = buildingName
-        _viewModel = StateObject(wrappedValue: ProgramGanttViewModel(buildingId: buildingId))
+        _viewModel = StateObject(wrappedValue: ProgramGanttViewModel(buildingId: buildingId, buildingName: buildingName))
     }
 
     var body: some View {
