@@ -88,7 +88,7 @@ export default function BuildingDetailPage() {
   const formatPercent = (num: number) => `${(num * 100).toFixed(1)}%`
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Back Button & Header */}
       <div className="flex items-center gap-4">
         <button

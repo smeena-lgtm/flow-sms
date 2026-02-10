@@ -371,8 +371,11 @@ export default function ProgramGantt({ projectId, projectName }: ProgramGanttPro
   const hasTimeline = timeline !== null
 
   return (
-    /* CRITICAL: max-w-full + overflow-hidden stops this from pushing the page width */
-    <div className="rounded-2xl border border-border-color bg-bg-card overflow-hidden max-w-full">
+    /* CRITICAL: w-full + overflow-hidden + contain stops this from pushing the page width */
+    <div
+      className="rounded-2xl border border-border-color bg-bg-card overflow-hidden w-full"
+      style={{ contain: "inline-size" }}
+    >
 
       {/* ========== HEADER ========== */}
       <div className="border-b border-border-color px-6 py-4 bg-gradient-to-r from-bg-card to-bg-surface">
@@ -593,8 +596,8 @@ export default function ProgramGantt({ projectId, projectName }: ProgramGanttPro
 
       {/* ========== LIST VIEW ========== */}
       {view === "list" && (
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto overflow-y-hidden max-w-full">
+          <table className="w-full min-w-[700px]">
             <thead>
               <tr className="border-b border-border-color bg-bg-surface">
                 <th className="w-12 px-4 py-3 text-left text-xs font-semibold text-text-muted">#</th>
