@@ -29,6 +29,9 @@ struct BuildingDetailView: View {
                     // Header Card
                     HeaderCard(building: building)
 
+                    // Location Map
+                    BuildingLocationMapView(building: building)
+
                     // Top KPIs
                     KPIGrid(building: building)
 

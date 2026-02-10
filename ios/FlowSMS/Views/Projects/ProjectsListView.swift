@@ -44,6 +44,11 @@ struct ProjectsListView: View {
                     StatsRow(stats: stats)
                 }
 
+                // Map View
+                if let buildings = viewModel.response?.buildings, !buildings.isEmpty {
+                    ProjectsMapView(buildings: buildings)
+                }
+
                 // Status Tab Pills
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
