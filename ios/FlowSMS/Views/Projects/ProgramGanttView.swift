@@ -250,105 +250,74 @@ struct ProgramGanttView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header
-            HStack(spacing: 10) {
-                Image(systemName: "chart.gantt")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.oceanSwell)
+        SectionCard(title: "Project Program", icon: "calendar.badge.clock") {
+            VStack(spacing: 12) {
+                // Subtitle
+                if let program = viewModel.program {
+                    Text("\(program.stages.count) stages · Updated \(program.lastUpdated)")
+                        .font(.caption)
+                        .foregroundColor(.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Project Program")
-                        .font(.headline)
-                        .foregroundColor(.textPrimary)
-
-                    if let program = viewModel.program {
-                        Text("\(program.stages.count) stages · Updated \(program.lastUpdated)")
-                            .font(.caption2)
-                            .foregroundColor(.textSecondary)
+                // Segmented Control
+                if viewModel.program != nil {
+                    Picker("View", selection: $selectedTab) {
+                        Text("Timeline").tag(GanttTab.timeline)
+                        Text("Details").tag(GanttTab.details)
                     }
+                    .pickerStyle(.segmented)
                 }
 
-                Spacer()
-            }
-            .padding(16)
-
-            // Segmented Control
-            if viewModel.program != nil {
-                Picker("View", selection: $selectedTab) {
-                    Text("Timeline").tag(GanttTab.timeline)
-                    Text("Details").tag(GanttTab.details)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
-            }
-
-            // Content
-            if viewModel.isLoading {
-                HStack {
-                    Spacer()
-                    VStack(spacing: 12) {
+                // Content
+                if viewModel.isLoading {
+                    HStack {
+                        Spacer()
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .oceanSwell))
-                        Text("Loading program...")
+                        Text("Loading...")
+                            .font(.caption)
+                            .foregroundColor(.textSecondary)
+                        Spacer()
+                    }
+                    .padding(.vertical, 20)
+                } else if let errorMessage = viewModel.errorMessage {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.sunlight)
+                        Text(errorMessage)
                             .font(.caption)
                             .foregroundColor(.textSecondary)
                     }
-                    Spacer()
-                }
-                .padding(.vertical, 40)
-            } else if let errorMessage = viewModel.errorMessage {
-                VStack(spacing: 10) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.sunlight)
-                    Text(errorMessage)
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 30)
-            } else if let program = viewModel.program, !program.stages.isEmpty {
-                if selectedTab == .timeline {
-                    ProgramTimelineView(stages: program.stages)
-                } else {
-                    ProgramDetailsListView(stages: program.stages)
-                }
-            } else {
-                VStack(spacing: 10) {
-                    Image(systemName: "chart.bar.xaxis")
-                        .font(.system(size: 24))
-                        .foregroundColor(.textSecondary)
-                    Text("No program data available")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 30)
-            }
+                    .padding(.vertical, 12)
+                } else if let program = viewModel.program, !program.stages.isEmpty {
+                    if selectedTab == .timeline {
+                        ProgramTimelineView(stages: program.stages)
+                    } else {
+                        ProgramDetailsListView(stages: program.stages)
+                    }
 
-            // Legend
-            if viewModel.program != nil {
-                HStack(spacing: 12) {
-                    ForEach(ProgramCategory.allCases, id: \.self) { cat in
-                        HStack(spacing: 4) {
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(cat.color)
-                                .frame(width: 10, height: 10)
-                            Text(cat.label)
-                                .font(.caption2)
-                                .foregroundColor(.textSecondary)
+                    // Legend
+                    HStack(spacing: 12) {
+                        ForEach(ProgramCategory.allCases, id: \.self) { cat in
+                            HStack(spacing: 4) {
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(cat.color)
+                                    .frame(width: 10, height: 10)
+                                Text(cat.label)
+                                    .font(.caption2)
+                                    .foregroundColor(.textSecondary)
+                            }
                         }
                     }
+                } else {
+                    Text("No program data available yet")
+                        .font(.caption)
+                        .foregroundColor(.textSecondary)
+                        .padding(.vertical, 12)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
             }
         }
-        .background(Color.bgCard)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .task {
             await viewModel.fetchProgram()
         }
