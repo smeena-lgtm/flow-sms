@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
+import Link from "next/link"
 import {
   ArrowLeft,
   Building2,
@@ -17,9 +18,11 @@ import {
   ArrowUpDown,
   SquareStack,
   PanelTop,
+  ChevronRight,
 } from "lucide-react"
 import type { BuildingInfo } from "@/types/building"
 import ProgramGantt from "@/components/projects/ProgramGantt"
+import { getUnitStudy } from "@/data/unit-studies"
 
 export default function BuildingDetailPage() {
   const params = useParams()
@@ -278,6 +281,18 @@ export default function BuildingDetailPage() {
           <p className="text-sm text-text-muted">Average Marketable Index (AMI)</p>
           <p className="text-2xl font-bold text-text-primary">{formatNumber(building.ami.areaFt2)} ft²</p>
         </div>
+
+        {/* Unit Study Link */}
+        {getUnitStudy(building.identity.marketingName || building.identity.plotNo) && (
+          <Link
+            href={`/projects/${encodeURIComponent(projectId)}/unit-study`}
+            className="mt-4 flex items-center gap-2 p-3 rounded-xl bg-ocean-swell/8 hover:bg-ocean-swell/15 transition-colors group"
+          >
+            <Layers className="h-4 w-4 text-ocean-swell" />
+            <span className="text-sm text-ocean-swell font-medium">View full prototype & floor breakdown</span>
+            <ChevronRight className="h-4 w-4 text-ocean-swell ml-auto group-hover:translate-x-1 transition-transform" />
+          </Link>
+        )}
       </Section>
 
       {/* MEP Systems */}

@@ -49,8 +49,15 @@ struct BuildingDetailView: View {
                     // Sellable Area Section
                     SellableSection(building: building)
 
-                    // Unit Mix Section
-                    UnitMixSection(building: building)
+                    // Unit Mix Section (tappable if unit study exists)
+                    if let unitStudy = UnitStudyDatabase.project(for: building.identity.displayName) {
+                        NavigationLink(destination: UnitStudyView(project: unitStudy)) {
+                            UnitMixSection(building: building, hasDetail: true)
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        UnitMixSection(building: building)
+                    }
 
                     // MEP Section
                     MEPSection(building: building)
@@ -370,6 +377,7 @@ struct DataPill: View {
 
 struct UnitMixSection: View {
     let building: BuildingInfo
+    var hasDetail: Bool = false
 
     var unitTypes: [(String, Double, Color)] {
         [
@@ -443,6 +451,25 @@ struct UnitMixSection: View {
                 .padding()
                 .background(Color.bgSurface)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                // Tap indicator for detail view
+                if hasDetail {
+                    HStack {
+                        Image(systemName: "square.grid.3x3")
+                            .font(.caption)
+                            .foregroundColor(.oceanSwell)
+                        Text("Tap for full prototype & floor breakdown")
+                            .font(.caption)
+                            .foregroundColor(.oceanSwell)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.oceanSwell)
+                    }
+                    .padding(10)
+                    .background(Color.oceanSwell.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
             }
         }
     }
