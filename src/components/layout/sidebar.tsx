@@ -19,8 +19,11 @@ import {
   LogOut,
   HelpCircle,
   Shield,
+  Moon,
+  Sun,
 } from "lucide-react"
 import { useState } from "react"
+import { useTheme } from "@/context/ThemeContext"
 
 interface NavItem {
   name: string
@@ -46,6 +49,7 @@ const bottomNavigation = [
 export function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+  const { mode, toggleMode } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [expandedItems, setExpandedItems] = useState<string[]>([])
 
@@ -184,6 +188,29 @@ export function Sidebar() {
 
         {/* Divider */}
         <div className="my-6 border-t border-border-color" />
+
+        {/* Mode Toggle */}
+        <div className="mb-2">
+          <button
+            onClick={toggleMode}
+            className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-text-secondary hover:bg-bg-card-hover hover:text-text-primary transition-all duration-200"
+          >
+            {mode === 'night' ? (
+              <Moon className="h-5 w-5 text-accent-yellow" />
+            ) : (
+              <Sun className="h-5 w-5 text-accent-yellow" />
+            )}
+            <span className="flex-1 text-left">{mode === 'night' ? 'Night Mode' : 'Day Mode'}</span>
+            <div className="relative w-10 h-[22px] bg-bg-hover rounded-full border border-border-color">
+              <div className={cn(
+                "absolute top-[2px] w-4 h-4 rounded-full transition-all duration-300",
+                mode === 'night'
+                  ? "left-[2px] bg-accent-blue"
+                  : "left-[22px] bg-accent-yellow"
+              )} />
+            </div>
+          </button>
+        </div>
 
         {/* Bottom navigation */}
         <ul className="space-y-1">

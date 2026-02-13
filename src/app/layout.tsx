@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import "./globals.css"
 import { AuthProvider } from "@/context/AuthContext"
+import { ThemeProvider } from "@/context/ThemeContext"
 import { DashboardWrapper } from "@/components/layout/DashboardWrapper"
 
 export const metadata: Metadata = {
@@ -14,13 +15,15 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-mode="night" data-theme="default">
       <body className="antialiased bg-bg-dark text-text-primary font-sans">
-        <AuthProvider>
-          <DashboardWrapper>
-            {children}
-          </DashboardWrapper>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <DashboardWrapper>
+              {children}
+            </DashboardWrapper>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

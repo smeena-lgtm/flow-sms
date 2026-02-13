@@ -3,6 +3,7 @@ import SwiftUI
 struct MainTabView: View {
     @State private var selectedTab = 0
     @Namespace private var animation
+    @ObservedObject private var themeManager = ThemeManager.shared
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -56,29 +57,36 @@ struct MainTabView: View {
             }
             .tag(4)
         }
-        .tint(.oceanSwell)
+        .tint(themeManager.colors.accent)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedTab)
         .onAppear {
-            // Customize tab bar appearance
-            let appearance = UITabBarAppearance()
-            appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = UIColor(Color.bgCard)
-
-            // Normal state
-            appearance.stackedLayoutAppearance.normal.iconColor = UIColor(Color.textSecondary)
-            appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-                .foregroundColor: UIColor(Color.textSecondary)
-            ]
-
-            // Selected state
-            appearance.stackedLayoutAppearance.selected.iconColor = UIColor(Color.oceanSwell)
-            appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-                .foregroundColor: UIColor(Color.oceanSwell)
-            ]
-
-            UITabBar.appearance().standardAppearance = appearance
-            UITabBar.appearance().scrollEdgeAppearance = appearance
+            configureTabBarAppearance()
         }
+        .onChange(of: themeManager.changeCounter) { _, _ in
+            configureTabBarAppearance()
+        }
+    }
+
+    private func configureTabBarAppearance() {
+        let c = themeManager.colors
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(c.tabBarBg)
+
+        // Normal state
+        appearance.stackedLayoutAppearance.normal.iconColor = UIColor(c.textSecondary)
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+            .foregroundColor: UIColor(c.textSecondary)
+        ]
+
+        // Selected state
+        appearance.stackedLayoutAppearance.selected.iconColor = UIColor(c.accent)
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+            .foregroundColor: UIColor(c.accent)
+        ]
+
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
     }
 }
 

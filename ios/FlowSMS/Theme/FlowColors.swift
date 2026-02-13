@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Flow Brand Colors
+// Flow Brand Colors — Fixed palette (never change with theme)
 extension Color {
     // Primary Brand Colors
     static let midnight = Color(hex: "3D3D3D")
@@ -11,14 +11,14 @@ extension Color {
     static let roots = Color(hex: "8C4500")
     static let olive = Color(hex: "767317")
 
-    // UI Colors
-    static let bgDark = Color(hex: "2D2D2D")
-    static let bgCard = Color(hex: "3D3D3D")
-    static let bgSurface = Color(hex: "353535")
-    static let bgHover = Color(hex: "4D4D4D")
-    static let textPrimary = Color(hex: "F3EDDF")
-    static let textSecondary = Color(hex: "A0A0A0")
-    static let borderColor = Color(hex: "4D4D4D")
+    // Dynamic UI Colors — Change with active theme
+    static var bgDark: Color { ThemeManager.shared.colors.bgDark }
+    static var bgCard: Color { ThemeManager.shared.colors.bgCard }
+    static var bgSurface: Color { ThemeManager.shared.colors.bgSurface }
+    static var bgHover: Color { ThemeManager.shared.colors.bgHover }
+    static var textPrimary: Color { ThemeManager.shared.colors.textPrimary }
+    static var textSecondary: Color { ThemeManager.shared.colors.textSecondary }
+    static var borderColor: Color { ThemeManager.shared.colors.borderColor }
 }
 
 // Hex color initializer

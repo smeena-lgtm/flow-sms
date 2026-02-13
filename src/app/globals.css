@@ -46,6 +46,97 @@
   --chart-4: #f472b6;
 }
 
+/* ============================================
+   THEME: Default + Day Mode (Light)
+   ============================================ */
+[data-mode="day"] {
+  --bg-dark: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --bg-hover: #f1f5f9;
+  --bg-surface: #f1f5f9;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --border-color: #e2e8f0;
+  --border-light: #cbd5e1;
+}
+
+/* ============================================
+   THEME: Flow Brand + Night Mode (Dark)
+   ============================================ */
+[data-theme="flow"] {
+  --midnight: #3D3D3D;
+  --ocean-swell: #7DADBB;
+  --heart: #F99AA9;
+  --sunlight: #E89700;
+  --roots: #8C4500;
+  --olive: #767317;
+
+  --bg-dark: #2D2D2D;
+  --bg-card: #3D3D3D;
+  --bg-card-hover: #4A4A4A;
+  --bg-hover: #4A4A4A;
+  --bg-surface: #353535;
+
+  --text-primary: #F3EDDF;
+  --text-secondary: #B0B0A0;
+  --text-muted: #808078;
+
+  --border-color: #4D4D4D;
+  --border-light: #5D5D5D;
+
+  --accent-blue: #7DADBB;
+  --accent-purple: #9B8EC4;
+  --accent-pink: #F99AA9;
+  --accent-green: #8BA869;
+  --accent-yellow: #E89700;
+  --accent-red: #D94F4F;
+  --accent-cyan: #7DADBB;
+
+  --chart-1: #E89700;
+  --chart-2: #7DADBB;
+  --chart-3: #8BA869;
+  --chart-4: #F99AA9;
+}
+
+/* ============================================
+   THEME: Flow Brand + Day Mode (Light)
+   ============================================ */
+[data-theme="flow"][data-mode="day"] {
+  --bg-dark: #F3EDDF;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #EBE5D5;
+  --bg-hover: #EBE5D5;
+  --bg-surface: #EDE7D8;
+
+  --text-primary: #3D3D3D;
+  --text-secondary: #6B6B6B;
+  --text-muted: #999990;
+
+  --border-color: #D4CCBA;
+  --border-light: #C4BBA8;
+}
+
+/* ============================================
+   THEME TRANSITIONS
+   ============================================ */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html * {
+  transition: background-color 0.3s ease, color 0.2s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Opt-out for animations and transforms */
+html .no-theme-transition,
+html .no-theme-transition * {
+  transition: none !important;
+}
+
 * {
   border-color: var(--border-color);
 }

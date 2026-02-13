@@ -41,7 +41,7 @@ export function DashboardWrapper({ children }: { children: React.ReactNode }) {
           title="Dashboard"
           subtitle={`Welcome back, ${user.name.split(' ')[0]}`}
         />
-        <main className="flex-1 p-4 md:p-6 bg-midnight overflow-x-hidden">
+        <main className="flex-1 p-4 md:p-6 bg-bg-surface overflow-x-hidden">
           {children}
         </main>
       </div>
